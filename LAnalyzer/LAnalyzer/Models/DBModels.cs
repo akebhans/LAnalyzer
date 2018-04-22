@@ -26,6 +26,7 @@ namespace LAnalyzer.Models
     {
         [Key]
         public int PropertyId { get; set; }
+        public int ProjectId { get; set; }
         public string PropertyName { get; set; }
     }
 
@@ -50,6 +51,7 @@ namespace LAnalyzer.Models
     {
         [Key]
         public int DataId { get; set; }
+        public int ProjectId { get; set; }
         public string Data_Name { get; set; }
     }
 

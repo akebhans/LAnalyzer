@@ -128,7 +128,8 @@ namespace LAnalyzer.Controllers
             Project project = db.Project.Find(id);
             db.Project.Remove(project);
             db.SaveChanges();
-            return RedirectToAction("Index");
+            return RedirectToAction("ProjectList");
+            //return RedirectToAction("Index");
         }
 
         protected override void Dispose(bool disposing)

@@ -113,8 +113,8 @@ c:\users\åke\source\repos\LAnalyzer\LAnalyzer\bin\Microsoft.AI.DependencyCollec
 c:\users\åke\source\repos\LAnalyzer\LAnalyzer\bin\Microsoft.AI.ServerTelemetryChannel.xml
 c:\users\åke\source\repos\LAnalyzer\LAnalyzer\bin\Microsoft.AI.WindowsServer.xml
 c:\users\åke\source\repos\LAnalyzer\LAnalyzer\bin\Microsoft.AI.Web.xml
-c:\users\åke\source\repos\LAnalyzer\LAnalyzer\obj\Debug\LAnalyzer.csprojResolveAssemblyReference.cache
 c:\users\åke\source\repos\LAnalyzer\LAnalyzer\obj\Debug\LAnalyzer.csproj.CoreCompileInputs.cache
 c:\users\åke\source\repos\LAnalyzer\LAnalyzer\obj\Debug\LAnalyzer.csproj.CopyComplete
 c:\users\åke\source\repos\LAnalyzer\LAnalyzer\obj\Debug\LAnalyzer.dll
 c:\users\åke\source\repos\LAnalyzer\LAnalyzer\obj\Debug\LAnalyzer.pdb
+C:\Users\Åke\source\repos\LAnalyzer\LAnalyzer\obj\Debug\LAnalyzer.csprojResolveAssemblyReference.cache
