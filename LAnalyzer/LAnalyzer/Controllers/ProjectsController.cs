@@ -34,7 +34,7 @@ namespace LAnalyzer.Controllers
             return View(userProjectList);
         }
 
-    
+
 
         // GET: Projects/Details/5
         public ActionResult Details(int? id)
@@ -125,9 +125,25 @@ namespace LAnalyzer.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult DeleteConfirmed(int id)
         {
+ // DELETE Project            
             Project project = db.Project.Find(id);
             db.Project.Remove(project);
+
+// DELETE PropNames
+            List<PropName> propNameList = db.PropertyName.ToList();
+
+            var deletePropNames =
+                from names in db.PropertyName
+                where names.ProjectId == project.ProjectId
+                select names;
+
+            foreach (var item in deletePropNames)
+            {
+                db.PropertyName.Remove(item);
+            }
+
             db.SaveChanges();
+
             return RedirectToAction("ProjectList");
             //return RedirectToAction("Index");
         }

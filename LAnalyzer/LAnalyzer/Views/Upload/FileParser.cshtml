@@ -1,4 +1,6 @@
-﻿@model LAnalyzer.Models.CSVFile
+﻿
+@model LAnalyzer.Models.CSVFile
+@using Newtonsoft.Json;
 @{
     ViewBag.Title = "FileParser";
 }
@@ -9,10 +11,13 @@
 {
     @Html.AntiForgeryToken()
 
-<div class="form-actions no-color">
-    <input type="submit" value="Save" class="btn btn-default" /> |
-    @Html.ActionLink("Save_File_Data", new {CSV })
-</div>
+    <div class="form-actions no-color">
+        <input type="submit" value="Save" class="btn btn-default" />
+        @{
+            @Html.ActionLink("Save_File_Data", "Save_File_Data", new { project = Model.Project, fileName= ViewBag.Content })
+            //Html.ActionLink("Save_File_Data", "Save_File_Data", new { myFile = myFile });
+        }
+    </div>
 }
 
 <table>

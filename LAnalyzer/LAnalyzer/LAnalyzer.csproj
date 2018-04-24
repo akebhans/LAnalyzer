@@ -275,6 +275,7 @@
     <Content Include="Views\Projects\ProjectList.cshtml" />
     <Content Include="Views\Upload\FileParser.cshtml" />
     <Content Include="Views\Shared\_Layout_FileParser.cshtml" />
+    <Content Include="Views\Upload\Save_File_Data.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\Files\" />

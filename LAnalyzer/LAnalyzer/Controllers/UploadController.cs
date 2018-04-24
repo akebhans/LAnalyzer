@@ -10,15 +10,20 @@ using Microsoft.AspNet.Identity;
 using LAnalyzer.Context;
 using Microsoft.VisualBasic.FileIO;
 using System.Reflection;
+using Newtonsoft.Json;
+using System.Collections;
 
 namespace LAnalyzer.Controllers
 {
     public class UploadController : Controller
     {
+        //DB_Context context = new DB_Context();
+
         public ActionResult UploadDocument(string project = "", string uploadFile = "")
         {
             if (project != "")
             {
+
                 string myId = User.Identity.GetUserId();
                 if (CheckExistProject(myId, project))
                 {
@@ -32,6 +37,7 @@ namespace LAnalyzer.Controllers
                 myProject.ProjectName = project;
                 context.Project.Add(myProject);
                 context.SaveChanges();
+                context.Dispose();
                 //var path = Path.Combine(Server.MapPath("~/App_Data/Files/"), uploadFile);
                 //var parser = new Microsoft.VisualBasic.FileIO.TextFieldParser(path);
                 //parser.TextFieldType = Microsoft.VisualBasic.FileIO.FieldType.Delimited;
@@ -45,7 +51,7 @@ namespace LAnalyzer.Controllers
                 //CSVFile myCSVFile = new CSVFile();
                 //myCSVFile = FileParser(uploadFile);
                 //return RedirectToAction("UploadDocument", new { project = myProject, uploadFile = fileName });
-                return RedirectToAction("FileParser", new { project = project ,csvFile = uploadFile });
+                return RedirectToAction("FileParser", new { project = project, csvFile = uploadFile });
                 //return View("../Home/Index");
             }
             else
@@ -99,6 +105,7 @@ namespace LAnalyzer.Controllers
                 var projects = from p in context.Project
                                where p.ProjectName == project && p.UserId == user
                                select p;
+                Dispose();
                 if (projects.Count() > 0)
                 {
                     return true;
@@ -107,10 +114,18 @@ namespace LAnalyzer.Controllers
                 {
                     return false;
                 }
+
             }
+
         }
 
         public ActionResult FileParser(string project, string csvFile)
+        {
+            ViewBag.Content = csvFile;
+            return View(UploadToObject(project, csvFile));
+        }
+
+        public CSVFile UploadToObject(string project, string csvFile)
         {
             var nameList = new List<string>();
             var valueList = new List<object>();
@@ -132,13 +147,13 @@ namespace LAnalyzer.Controllers
                         typeList = row.ToList();
                         int j = 0;
                         foreach (var term in row)
-                        {   
+                        {
                             if (double.TryParse(term, out double n)) typeList[j] = "N";
                             else typeList[j] = "S";
                             j++;
                         }
                     }
-                    else 
+                    else
                     {
                         int j = 0;
                         foreach (var term in row)
@@ -156,14 +171,9 @@ namespace LAnalyzer.Controllers
             myFile.NameList = nameList;
             myFile.ValueList = valueList;
             myFile.TypeList = typeList;
-
-            return View(myFile);
-
-            //returnList.Add(nameList);
-            //returnList.Add(valueList);
-            //returnList.Add(typeList);
-            //return returnList;
+            return myFile;
         }
+
 
         public string CsvToJson(string myFile)
         {
@@ -210,5 +220,66 @@ namespace LAnalyzer.Controllers
             Decimal dummy;
             return Decimal.TryParse(input, out dummy);
         }
+
+        public ActionResult Save_File_Data(string project, string fileName)
+        {
+            DB_Context db = new DB_Context();
+            CSVFile myData = new CSVFile();
+            myData = UploadToObject(project, fileName);
+
+            var projectList = db.Project.ToList();
+
+            int myProjectId = (from projItem in projectList
+                               where projItem.ProjectName == project
+                               select projItem.ProjectId).FirstOrDefault();
+
+            
+
+            
+
+            List <int> myProjectIDList = FillPropertyNames(myProjectId, myData.NameList);
+
+            // Databas-anrop HÄR!!!
+            db.Dispose();
+            return View();
+        }
+
+        private List<int> FillPropertyNames(int projectId, List<string> propNames)
+        {
+            DB_Context context = new DB_Context();
+            var nameList = context.PropertyName.ToList();
+            int lastPropertyId;
+            try
+            {
+                lastPropertyId = (from nameItem in nameList
+                                  orderby nameItem.PropertyId
+                                  select nameItem.PropertyId).Last();
+            }
+            catch (InvalidOperationException e)
+            {
+                lastPropertyId = 0;
+            }
+            List<int> myIdList = new List<int>();
+            foreach (string item in propNames)
+            {
+                PropName myPropName = new PropName();
+                lastPropertyId++;
+                myPropName.PropertyId = lastPropertyId;
+                context.PropertyName.Add(new PropName { PropertyId = lastPropertyId, ProjectId = projectId, PropertyName = item });
+                myIdList.Add(lastPropertyId);
+            }
+            context.SaveChanges();
+            context.Dispose();
+            return myIdList;
+        }
+
+        //protected override void Dispose(bool disposing)
+        //{
+        //    if (disposing)
+        //    {
+        //        context.Dispose();
+        //    }
+        //    base.Dispose(disposing);
+        //}
     }
 }

@@ -12,6 +12,11 @@ namespace LAnalyzer.Models
         public int ProjectId { get; set; }
         public string UserId { get; set; }
         public string ProjectName { get; set; }
+
+        public void Delete_Project(int projectID)
+        {
+
+        }
     }
 
         public class PropRow
@@ -28,6 +33,11 @@ namespace LAnalyzer.Models
         public int PropertyId { get; set; }
         public int ProjectId { get; set; }
         public string PropertyName { get; set; }
+
+        public void DeletePropName(int propertyId)
+        {
+
+        }
     }
 
     public class PropValue
