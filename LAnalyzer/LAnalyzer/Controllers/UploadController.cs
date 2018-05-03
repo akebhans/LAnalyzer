@@ -12,6 +12,8 @@ using Microsoft.VisualBasic.FileIO;
 using System.Reflection;
 using Newtonsoft.Json;
 using System.Collections;
+using System.Data.SqlClient;
+using System.Configuration;
 
 namespace LAnalyzer.Controllers
 {
@@ -128,7 +130,7 @@ namespace LAnalyzer.Controllers
         public CSVFile UploadToObject(string project, string csvFile)
         {
             var nameList = new List<string>();
-            var valueList = new List<object>();
+            var valueList = new List<List<string>>();
             var typeList = new List<string>();
             var path = Path.Combine(Server.MapPath("~/App_Data/Files/"), csvFile);
             var parser = new Microsoft.VisualBasic.FileIO.TextFieldParser(path);
@@ -223,6 +225,12 @@ namespace LAnalyzer.Controllers
 
         public ActionResult Save_File_Data(string project, string fileName)
         {
+            // Use ADO instead of EF due to performance issues
+
+            string ADOcon = ConfigurationManager.ConnectionStrings["ADOLucroAnalyzer"].ConnectionString;
+            SqlConnection DbConnection = new SqlConnection(ADOcon);
+            DbConnection.Open();
+
             DB_Context db = new DB_Context();
             CSVFile myData = new CSVFile();
             myData = UploadToObject(project, fileName);
@@ -230,48 +238,283 @@ namespace LAnalyzer.Controllers
             var projectList = db.Project.ToList();
 
             int myProjectId = (from projItem in projectList
-                               where projItem.ProjectName == project
+                               where projItem.ProjectName == project && projItem.UserId == User.Identity.GetUserId()
                                select projItem.ProjectId).FirstOrDefault();
 
-            
 
-            
 
-            List <int> myProjectIDList = FillPropertyNames(myProjectId, myData.NameList);
+
+
+            List<List<int>> myIDList = FillNames(myProjectId, myData.NameList, myData.TypeList);
+
+            FillValues(DbConnection,db,myProjectId, myIDList, myData.TypeList, myData.ValueList);
 
             // Databas-anrop HÄR!!!
+            db.SaveChanges();
             db.Dispose();
+            DbConnection.Close();
             return View();
         }
 
-        private List<int> FillPropertyNames(int projectId, List<string> propNames)
+        private List<List<int>> FillNames(int projectId, List<string> namesList, List<string> typeList)
         {
             DB_Context context = new DB_Context();
-            var nameList = context.PropertyName.ToList();
+
+            // Initiate for table PropNames
+            var namePropList = context.PropertyName.ToList();
             int lastPropertyId;
+            // Get last PropertyId in PropertyName
             try
             {
-                lastPropertyId = (from nameItem in nameList
+                lastPropertyId = (from nameItem in namePropList
                                   orderby nameItem.PropertyId
                                   select nameItem.PropertyId).Last();
             }
             catch (InvalidOperationException e)
             {
+                // if table PropertyName is empty set lastPropertyId = 0
                 lastPropertyId = 0;
             }
-            List<int> myIdList = new List<int>();
-            foreach (string item in propNames)
+
+            // Initiate for table DataNames
+            var nameDataList = context.DataName.ToList();
+            int lastDataId;
+            // Get last DataId in DataNames
+            try
             {
-                PropName myPropName = new PropName();
-                lastPropertyId++;
-                myPropName.PropertyId = lastPropertyId;
-                context.PropertyName.Add(new PropName { PropertyId = lastPropertyId, ProjectId = projectId, PropertyName = item });
-                myIdList.Add(lastPropertyId);
+                lastDataId = (from nameItem in nameDataList
+                              orderby nameItem.DataId
+                              select nameItem.DataId).Last();
+            }
+            catch (InvalidOperationException e)
+            {
+                // if table DataNames is empty set lastDatId = 0
+                lastDataId = 0;
+
+            }
+
+            List<int> myPropIdList = new List<int>();
+            List<int> myDataIdList = new List<int>();
+
+            int counter = 0;
+
+            foreach (string item in namesList)
+            {
+                if (typeList[counter] == "S")
+                {
+                    PropName myPropName = new PropName();
+                    lastPropertyId++;
+                    myPropName.PropertyId = lastPropertyId;
+                    context.PropertyName.Add(new PropName { ProjectId = projectId, PropertyName = item });
+                }
+                else
+                {
+                    DataName myDataName = new DataName();
+                    lastDataId++;
+                    myDataName.DataId = lastDataId;
+                    context.DataName.Add(new DataName { ProjectId = projectId, Data_Name = item });
+                }
+                counter++;
             }
             context.SaveChanges();
+            var myPropList = from names in context.PropertyName where names.ProjectId == projectId select names.PropertyId;
+            foreach (var item in myPropList)
+            {
+                myPropIdList.Add(item);
+            }
+            var myDataList = from names in context.DataName where names.ProjectId == projectId select names.DataId;
+            foreach (var item in myDataList)
+            {
+                myDataIdList.Add(item);
+            }
             context.Dispose();
-            return myIdList;
+            List<List<int>> returnList = new List<List<int>>();
+            returnList.Add(myPropIdList);
+            returnList.Add(myDataIdList);
+            return returnList;
         }
+
+        public void FillValues(SqlConnection DBcon,DB_Context context, int myProjectID, List<List<int>> myIDList, List<string> myTypeList, List<List<string>> myValueList)
+        {
+
+            // Loop through myValueList
+
+
+            int LastRow = 0, lastPropertyIndex, lastDataIndex;
+
+            // For each row...
+
+            foreach (List<string> row in myValueList)
+            {
+                lastPropertyIndex = 0;
+                lastDataIndex = 0;
+
+                // For each column
+
+                int lastColumn = 0, myPropertyValueId;
+
+                foreach (string column in row)
+                {
+                    if (myTypeList[lastColumn] == "S")
+                    {
+                        //myPropertyValueId = SavePropertyValue(DBcon,context, myIDList[0][lastPropertyIndex], column, LastRow);
+                        SavePropertyValue(DBcon, context, myIDList[0][lastPropertyIndex], column, LastRow);
+                        lastPropertyIndex++;
+
+                        //SavePropRow
+
+                        // Get last PropRows.Id
+
+
+                        // Save
+                    }
+                    else if (myTypeList[lastColumn] == "N")
+                    {
+                        SaveDataValue(DBcon, context, myIDList[1][lastDataIndex], column, LastRow);
+                        lastDataIndex++;
+                    }
+                    else
+                    {
+
+                    }
+                    lastColumn++;
+                    // RÄKNA UPP lastColumn etc...
+                }
+                LastRow++;
+
+            }
+            ViewBag.Message= "HEJ";
+            //int counter = 0, lastPropertyId, lastDataId;
+
+            //foreach (var item in myTypeList)
+            //{
+            //    // If Property
+            //    if (myTypeList[counter] == "S")
+            //    {
+
+            //    }
+            //}
+
+        }
+        //private int SavePropertyValue(SqlConnection sqlCon,DB_Context context,int myPropertyId, string myPropertyValue, int rowNo)
+        private void SavePropertyValue(SqlConnection sqlCon, DB_Context context, int myPropertyId, string myPropertyValue, int rowNo)
+        {
+            //DB_Context context = new DB_Context();
+
+            var propRowsList = context.PropertyRow.ToList();
+            var propValueList = context.PropertyValue.ToList();
+
+            // Add PropertyValue
+
+            // Handle eventual apostorphes in PropertyValue
+
+            myPropertyValue = myPropertyValue.Replace("'", "''");
+
+            string sqlPropValue = "INSERT INTO PROPVALUES (PROPERTYID, PROPERTYVALUE) SELECT " + myPropertyId.ToString() + ", '" + 
+                myPropertyValue+ "' WHERE NOT EXISTS (SELECT * FROM PropValues WHERE PropertyValue = '" + myPropertyValue + "' AND PROPERTYID = " +
+                myPropertyId.ToString() + ")";
+
+            SqlCommand addPropVCommand = new SqlCommand(sqlPropValue, sqlCon);
+
+            int nRows = addPropVCommand.ExecuteNonQuery();
+
+            string sqlGetPropValueId = "SELECT PROPERTYVALUEID FROM PROPVALUES  WHERE PropertyValue = '" + myPropertyValue + "' AND PROPERTYID = " +
+                myPropertyId.ToString();
+
+            string sqlPropRow = "INSERT INTO PROPROWS (ROWID, PROPERTYVALUEID) VALUES (" + rowNo.ToString() + ",(" + sqlGetPropValueId + "))";
+
+            SqlCommand addPropRCommand = new SqlCommand(sqlPropRow, sqlCon);
+
+
+            nRows = addPropRCommand.ExecuteNonQuery();
+
+            //context.PropertyValue.Add(new PropValue { PropertyId = myPropertyId, PropertyValue = myPropertyValue });
+
+            //context.SaveChanges();
+
+            //propRowsList = context.PropertyRow.ToList();
+
+            // get last PropValueId
+
+            //int myPropValueId;
+
+            //try
+            //{
+            //    myPropValueId = (from propItem in context.PropertyValue 
+            //                       orderby propItem.PropertyValueId descending 
+            //                       select propItem.PropertyValueId).FirstOrDefault();
+            //}
+            //catch (InvalidOperationException e)
+            //{
+            //    // SHOULD NOT HAPPEN - Something is wrong!!
+            //    myPropValueId = 0;
+            //}
+
+
+            // Check if exists
+
+            //var myPropValueId = (from propItem in propValueList
+            //                     where propItem.PropertyId == myPropertyId &&
+            //                     propItem.PropertyValue == myPropertyValue
+            //                     select propItem.PropertyValueId).FirstOrDefault();
+
+            //if (myPropValueId == 0)
+            //{
+            //    int lastPropValueId;
+            //    // Get last PropertyId in PropertyName
+            //    try
+            //    {
+            //        lastPropValueId = (from propItem in propValueList
+            //                           orderby propItem.PropertyValueId
+            //                           select propItem.PropertyValueId).Last();
+            //    }
+            //    catch (InvalidOperationException e)
+            //    {
+            //        // if table PropertyName is empty set lastPropertyId = 0
+            //        lastPropValueId = 0;
+            //    }
+            //    myPropValueId = lastPropValueId + 1;
+            //    context.PropertyValue.Add(new PropValue { PropertyValueId = myPropValueId, PropertyId = myPropertyId, PropertyValue = myPropertyValue });
+
+            //}
+
+            //context.PropertyRow.Add(new PropRow { PropertyValueId = myPropValueId, RowId = rowNo });
+
+            //context.SaveChanges();
+
+            //context.Dispose();
+
+            //return myPropValueId;
+
+        }
+
+        private void SaveDataValue(SqlConnection sqlCon, DB_Context context,int myDataId, string myDataValue, int rowNo)
+        {
+            //DB_Context context = new DB_Context();
+
+            //var dataRowsList = context.DataRow.ToList();
+
+            //double myValue;
+
+            //double.TryParse(myDataValue, out myValue);
+
+            //context.DataRow.Add(new DataRow { DataId = myDataId, DataValue = myValue, RowId = rowNo });
+
+
+            // Decimal comma is replaced with decimal dot
+            myDataValue = myDataValue.Replace(",", ".");
+
+            string addDataRSql = "INSERT INTO DATAROWS (ROWID, DATAID, DATAVALUE) VALUES (" + rowNo.ToString() + "," + myDataId + "," + myDataValue + ")";
+
+            SqlCommand addDataRCommand = new SqlCommand(addDataRSql, sqlCon);
+
+            addDataRCommand.ExecuteNonQuery();
+            
+            //context.SaveChanges();
+
+            //context.Dispose();
+        }
+
 
         //protected override void Dispose(bool disposing)
         //{

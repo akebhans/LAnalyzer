@@ -9,6 +9,7 @@ using System.Web.Mvc;
 using LAnalyzer.Context;
 using LAnalyzer.Models;
 using Microsoft.AspNet.Identity;
+using System.Configuration;
 
 namespace LAnalyzer.Controllers
 {
@@ -125,24 +126,128 @@ namespace LAnalyzer.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult DeleteConfirmed(int id)
         {
- // DELETE Project            
+            // DELETE Project            
             Project project = db.Project.Find(id);
             db.Project.Remove(project);
 
-// DELETE PropNames
+            List<PropRow> propRowList = db.PropertyRow.ToList();
+            List<PropValue> propValueList = db.PropertyValue.ToList();
             List<PropName> propNameList = db.PropertyName.ToList();
 
+            // DELETE  records in PropRows 
+
+            //string deletePropRows = "DELETE FROM PropertyRow WHERE PropertyValueId In (Select"
+
+            var deletePropRows =
+                from rows in db.PropertyRow
+                join values in db.PropertyValue on rows.PropertyValueId equals values.PropertyValueId
+                join names in db.PropertyName on values.PropertyId equals names.PropertyId
+                where names.ProjectId == id
+                select rows;
+
+            foreach (var item in deletePropRows)
+            {
+                db.PropertyRow.Remove(item);
+            }
+
+            // DELETE  records in PropValues 
+
+            //var deletePropValues =
+            //    from values in db.PropertyValue join names in db.PropertyName on values.PropertyId equals names.PropertyId 
+            //    where names.ProjectId == id
+            //    select values;
+
+            //string deletePropValues = "DELETE FROM PropertyValue WHERE PropertyId IN (SELECT PropertyId FROM PropertyName WHERE ProjectId = " + id.ToString();
+
+            //using (SqlConnection con = new SqlConnection(ConfigurationManager.ConnectionStrings["LucroAnalyzer"].ConnectionString))
+            //{
+            //    SqlCommand command = new SqlCommand(deletePropValues, con);
+            //    try
+            //    {
+            //        con.Open();
+            //        command.ExecuteNonQuery();
+            //    }
+            //    catch
+            //    {
+
+            //    }
+            //}
+
+            //var test = from names in db.PropertyName where names.ProjectId == id select names.PropertyId;
+            //foreach (var item in test)
+            //{
+            //    var test1 = from values in db.PropertyValue where values.PropertyId == item select values.PropertyValueId;
+            //    foreach (var row in test1)
+            //    {
+            //        var deletePropValues =
+            //          from values in db.PropertyValue
+            //          where values.PropertyValueId == row
+            //          select values;
+
+            //        foreach (var line in deletePropValues)
+            //        {
+            //            db.PropertyValue.Remove(line);
+            //        }
+            //    }
+            //}
+
+
+            var deletePropValues =
+            from values in db.PropertyValue
+            join names in db.PropertyName on values.PropertyId equals names.PropertyId
+            where names.ProjectId == id
+            select values;
+
+            foreach (var item in deletePropValues)
+            {
+                db.PropertyValue.Remove(item);
+            }
+
+            //            DELETE records in PropNames
+
             var deletePropNames =
-                from names in db.PropertyName
-                where names.ProjectId == project.ProjectId
-                select names;
+                  from names in db.PropertyName
+                  where names.ProjectId == id
+                  select names;
 
             foreach (var item in deletePropNames)
             {
                 db.PropertyName.Remove(item);
             }
 
+
+            List<Models.DataRow> dataRowList = db.DataRow.ToList();
+            List<DataName> dataNameList = db.DataName.ToList();
+
+            // DELETE records in DataRow
+
+
+
+            var deleteDataRows =
+                from rows in db.DataRow
+                join names in db.DataName on rows.DataId equals names.DataId
+                where names.ProjectId == id
+                select rows;
+
+            foreach (var item in deleteDataRows)
+            {
+                db.DataRow.Remove(item);
+            }
+
+            // DELETE records in DataNames
+
+            var deleteDataNames =
+                from names in db.DataName
+                where names.ProjectId == id
+                select names;
+
+            foreach (var item in deleteDataNames)
+            {
+                db.DataName.Remove(item);
+            }
+
             db.SaveChanges();
+            db.Dispose();
 
             return RedirectToAction("ProjectList");
             //return RedirectToAction("Index");
