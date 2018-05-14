@@ -7,11 +7,12 @@ using System.ComponentModel.DataAnnotations;
 namespace LAnalyzer.Models
 {
     public class Project
-    {
+    {   
         [Key]
         public int ProjectId { get; set; }
         public string UserId { get; set; }
         public string ProjectName { get; set; }
+        public string Status { get; set; } 
 
         public void Delete_Project(int projectID)
         {

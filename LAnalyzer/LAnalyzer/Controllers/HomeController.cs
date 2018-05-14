@@ -15,6 +15,19 @@ namespace LAnalyzer.Controllers
     {
         public ActionResult Index()
         {
+            //if (Request["FirstTime"] == null)
+            //{
+            
+            //    DB_Context db = new DB_Context();
+            //    var projectList = db.Project.ToList();
+
+            //    foreach (var item in projectList)
+            //    {
+            //        item.Status = "";
+            //    }
+            //    db.SaveChanges();
+            //    db.Dispose();
+            //}
             return View();
         }
 

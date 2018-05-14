@@ -252,13 +252,17 @@ namespace LAnalyzer.Controllers
 
             ProjectData myProject = new ProjectData();
 
+            myProject.SetProjectstatus(myProjectId, "U");
+
             myProject.FillValues(ADOcon, context: db, myProjectID: myProjectId, myIDList: myIDList, myTypeList: myData.TypeList, myValueList: myData.ValueList);
 
             // Databas-anrop HÄR!!!
             db.SaveChanges();
             db.Dispose();
             DbConnection.Close();
-            return View();
+
+            return RedirectToAction("../Projects/ProjectList");
+            //return View();
         }
 
         private List<List<int>> FillNames(int projectId, List<string> namesList, List<string> typeList)

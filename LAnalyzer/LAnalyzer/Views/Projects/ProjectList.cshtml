@@ -2,6 +2,11 @@
 
 @{
     ViewBag.Title = "ProjectList";
+    if (TempData["shortMessage"] != null)
+    {
+        string text = TempData["shortMessage"].ToString();
+    }
+
 }
 
 <h2>ProjectList</h2>
@@ -17,17 +22,29 @@
         <th></th>
     </tr>
 
-@foreach (var item in Model) {
-    <tr>
-        <td>
-            @Html.DisplayFor(modelItem => item.ProjectName)
-        </td>
-        <td>
-            @Html.ActionLink("Edit", "Edit", new { id=item.ProjectId }) |
-            @Html.ActionLink("Details", "Details", new { id=item.ProjectId }) |
-            @Html.ActionLink("Delete", "Delete", new { id=item.ProjectId })
-        </td>
-    </tr>
-}
+    @foreach (var item in Model)
+    {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.ProjectName)
+            </td>
+            <td>
+                @*@Html.ActionLink("Edit", "Edit", new { id=item.ProjectId }) |
+                    @Html.ActionLink("Details", "Details", new { id=item.ProjectId }) |*@
+                @if (item.Status.IsEmpty() || item.Status.Trim() == "")
+                {
+                    @Html.ActionLink("Delete", "Delete", new { id = item.ProjectId })
+                }
+                else if (item.Status == "D")
+                {
+                    <p>Deletion is ongoing ..</p>
+                }
+                else if (item.Status == "U")
+                {
+                    <p>Update of project is ongoing ..</p>
+                }
+            </td>
+        </tr>
+    }
 
 </table>
