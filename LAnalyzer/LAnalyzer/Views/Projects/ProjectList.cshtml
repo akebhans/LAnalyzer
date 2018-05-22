@@ -25,10 +25,10 @@
     @foreach (var item in Model)
     {
         <tr>
-            <td>
+            <td width="40%">
                 @Html.DisplayFor(modelItem => item.ProjectName)
             </td>
-            <td>
+            <td width="30%">
                 @*@Html.ActionLink("Edit", "Edit", new { id=item.ProjectId }) |
                     @Html.ActionLink("Details", "Details", new { id=item.ProjectId }) |*@
                 @if (item.Status.IsEmpty() || item.Status.Trim() == "")
@@ -42,6 +42,14 @@
                 else if (item.Status == "U")
                 {
                     <p>Update of project is ongoing ..</p>
+                }
+            </td>
+            <td width="30%">
+                @if (item.Status.IsEmpty())
+                {
+                    {
+                        @Html.ActionLink("Analyze", "../AnalysisResult/Index", new { id = item.ProjectId })
+                    }
                 }
             </td>
         </tr>

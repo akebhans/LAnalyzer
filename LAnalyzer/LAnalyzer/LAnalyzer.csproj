@@ -192,6 +192,8 @@
     <Compile Include="App_Start\Startup.Auth.cs" />
     <Compile Include="Context\DBContext.cs" />
     <Compile Include="Controllers\AccountController.cs" />
+    <Compile Include="Controllers\Analysis.cs" />
+    <Compile Include="Controllers\AnalysisResultController.cs" />
     <Compile Include="Controllers\CSVFileController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\ManageController.cs" />
@@ -201,6 +203,7 @@
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
     <Compile Include="Models\AccountViewModels.cs" />
+    <Compile Include="Models\AnalysisResult.cs" />
     <Compile Include="Models\CSVFile.cs" />
     <Compile Include="Models\DBModels.cs" />
     <Compile Include="Models\IdentityModels.cs" />
@@ -280,9 +283,12 @@
     <Content Include="Views\Shared\_Layout_FileParser.cshtml" />
     <Content Include="Views\Upload\Save_File_Data.cshtml" />
     <Content Include="Views\ProjectData\FillValues.cshtml" />
+    <Content Include="Views\Projects\Analyze.cshtml" />
+    <Content Include="Views\AnalysisResult\Index.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\Files\" />
+    <Folder Include="Views\Analysis\" />
     <Folder Include="Views\CSVFile\" />
   </ItemGroup>
   <ItemGroup>

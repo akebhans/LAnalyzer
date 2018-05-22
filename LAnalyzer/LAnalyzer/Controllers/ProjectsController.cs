@@ -11,6 +11,7 @@ using LAnalyzer.Models;
 using Microsoft.AspNet.Identity;
 using System.Configuration;
 using System.Threading.Tasks;
+using System.Threading;
 
 namespace LAnalyzer.Controllers
 {
@@ -21,6 +22,9 @@ namespace LAnalyzer.Controllers
         // GET: Projects
         public ActionResult ProjectList()
         {
+            // Refresh to get updates from actions lika upload/deletion of projects.
+            this.HttpContext.Response.AddHeader("refresh", "5; url=" + Url.Action("ProjectList"));
+
             if (TempData["shortMessage"] != null)
             {
                 ViewBag.Message = TempData["shortMessage"].ToString();
@@ -38,9 +42,9 @@ namespace LAnalyzer.Controllers
             }
 
             return View(userProjectList);
+
+
         }
-
-
 
         // GET: Projects/Details/5
         public ActionResult Details(int? id)
@@ -58,9 +62,22 @@ namespace LAnalyzer.Controllers
         }
 
         // GET: Projects/Create
-        public ActionResult Create()
+        public ActionResult Analyze(int? id)
         {
-            return View();
+            //if (ModelState.IsValid)
+            //{
+            //    List<PropName> propNameList = new List<PropName>();
+            //    List<PropValue> propValueList = new List<PropValue>();
+            //    List<PropRow> propRowList = new List<PropRow>();
+
+            //    List<T> ProjectList = new List<>();
+            //    Project project = db.Project.Find(id);
+
+            var propertyNames = from pN in db.PropertyName
+                        where pN.ProjectId.Equals(id)
+                        select pN;
+            
+            return View(propertyNames);
         }
 
         // POST: Projects/Create

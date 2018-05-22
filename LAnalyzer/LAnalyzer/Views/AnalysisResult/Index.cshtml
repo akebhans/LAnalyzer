@@ -1,0 +1,170 @@
+﻿@model LAnalyzer.Models.AnalysisResult
+@{
+    ViewBag.Title = "Index";
+}
+
+<h2>Index</h2>
+@using (Html.BeginForm("Index", "AnalysisResult", FormMethod.Post))
+{
+    int mySelections = 0;
+    List<int> mySelVal = new List<int>();
+    if (Request.Form["noSelections"] != null)
+    {
+        mySelections = int.Parse(Request.Form["noSelections"]);
+    }
+    <INPUT id="noSelections" name="noSelections" value="@mySelections" type="hidden" />
+    <table style="background-color:khaki">
+        <thead>CONDITIONS</thead>
+
+        @{
+            <tr>
+                @for (int i = 0; i <= mySelections; i++)
+                {
+                    if (Request.Form["noSelVal_" + i.ToString()] != null && Request.Form["noSelVal_" + i.ToString()].Trim() != "")
+                    {
+                        mySelVal.Add(int.Parse(Request.Form["noSelVal_" + i.ToString()]));
+                    }
+                    else
+                    {
+                        mySelVal.Add(0);
+                    }
+                    <td style="vertical-align:top">
+                        <input id="noSelVal_@i" name="noSelVal_@i" value="@mySelVal[i]" type="hidden" />
+                        @{
+                            var mySel = Request.Form["select_" + i.ToString()];
+                            if (mySel == null) { mySel = "0"; }
+                            string cselect = "";
+                            <select name="select_@i" id="select_@i" onchange="CheckNoSelections(@i)">
+                                <option value="0">Select property...</option>
+                                @foreach (var item in Model.PropNameList)
+                                {
+                                    if (item.PropertyId.ToString() == mySel) { cselect = "Selected"; }
+                                    else { cselect = ""; }
+                                    <option value="@item.PropertyId" @cselect>@item.PropertyName</option>
+                                }
+                            </select>
+
+
+                            if (i < mySelections)
+                            {
+                                for (int j = 0; j <= mySelVal[i]; j++)
+                                {
+                                    var tempSelVal = Request.Form["selValue_" + i.ToString() + "_" + j.ToString()];
+                                    if (tempSelVal == null) { tempSelVal = "0"; }
+                                    string cselectValue = "";
+
+
+                                    <br />
+                                    <select name="selValue_@(i)_@(j)" id="selVal_@(i)_@(j)" onchange="CheckNoSelValues(@i,@j)">
+                                        <option value="0">Select value...</option>
+                                        @foreach (var term in Model.PropValueLists[i])
+                                        {
+                                            if (term.PropertyValueId.ToString() == tempSelVal) { cselectValue = "Selected"; }
+                                            else { cselectValue = ""; }
+                                            <option value="@term.PropertyValueId" @cselectValue>@term.PropertyValue</option>
+                                        }
+                                    </select>
+                                }
+
+                            }
+                        }
+                    </td>
+                }
+            </tr>
+        }
+    </table>
+
+    <table>
+        <tr>
+            <td>
+                <table style="background-color:lawngreen">
+                    <tr>
+                    <thead>GROUP BY</thead>
+        </tr>
+
+        <tr>
+            <td>
+                @{
+                    string tempGroupBy = "";
+                    int noGroupBy = 0;
+                    if (Request.Form["noGroupBy"] != null)
+                    {
+                        noGroupBy = int.Parse(Request.Form["noGroupBy"]);
+                    }
+                    <INPUT id="noGroupBy" name="noGroupBy" value="@noGroupBy" type="hidden" />
+                    for (int i = 0; i <= noGroupBy; i++)
+                    {
+                        if (Request.Form["groupBy_" + i.ToString()] != null)
+                        {
+                            tempGroupBy = Request.Form["groupBy_" + i.ToString()];
+                        }
+                        <select name="groupBy_@i" id="groupBy_@i" onchange="">
+                            <option value="0">Select value...</option>
+                            @foreach (var term in Model.PropNameList)
+                            {
+                                var cSelGroupBy = "";
+                                if (term.PropertyId.ToString() == tempGroupBy) { cSelGroupBy = "Selected"; }
+                                else { cSelGroupBy = ""; }
+                                <option value="@term.PropertyId" @cSelGroupBy>@term.PropertyName</option>
+                            }
+                        </select>
+
+                    }
+                    <button onclick="AddGroupBy()">+</button>
+                    <button onclick="RemoveGroupBy()">-</button>
+                }
+            </td>
+        </tr>
+
+    </table>
+    </td>
+
+    <td>
+        <table style="background-color:lightgrey">
+            <thead>SUM BY</thead>
+            <tr>
+                <td>
+                    <select>
+                        @foreach (var item in Model.DataNameList)
+                        {
+                            <option value="@item.DataId">@item.Data_Name</option>
+                        }
+                    </select>
+
+                </td>
+            </tr>
+
+        </table>
+
+    </td>
+    </tr>
+
+    </table>
+    <INPUT name="submit" id="submit" value="Update Selection" type="submit" />
+}
+<script type="text/javascript">
+    function CheckNoSelections(i) {
+        if (i == document.getElementById("noSelections").value) {
+            document.getElementById("noSelections").value++;
+        }
+    }
+
+    function CheckNoSelValues(i, j) {
+        if (j == document.getElementById("noSelVal_" + i.toString()).value) {
+            document.getElementById("noSelVal_" + i.toString()).value++;
+        }
+    }
+
+
+    function AddGroupBy() {
+        document.getElementById("noGroupBy").value++;
+    }
+
+    function RemoveGroupBy() {
+        if (document.getElementById("noGroupBy").value > 0) {
+            document.getElementById("noGroupBy").value--;
+        }
+    }
+
+
+</script>
