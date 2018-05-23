@@ -12,137 +12,191 @@
     {
         mySelections = int.Parse(Request.Form["noSelections"]);
     }
+    // Hidden field to indicate if Calculate button has been hit
+    <INPUT id="calcFlag" name="calcFlag" value="NO" type="hidden" />
+    // Hidden field to hold the number of selected dimensions have been set by the user
     <INPUT id="noSelections" name="noSelections" value="@mySelections" type="hidden" />
     <table style="background-color:khaki">
         <thead>CONDITIONS</thead>
 
         @{
             <tr>
-                @for (int i = 0; i <= mySelections; i++)
-                {
-                    if (Request.Form["noSelVal_" + i.ToString()] != null && Request.Form["noSelVal_" + i.ToString()].Trim() != "")
-                    {
-                        mySelVal.Add(int.Parse(Request.Form["noSelVal_" + i.ToString()]));
-                    }
-                    else
-                    {
-                        mySelVal.Add(0);
-                    }
-                    <td style="vertical-align:top">
-                        <input id="noSelVal_@i" name="noSelVal_@i" value="@mySelVal[i]" type="hidden" />
-                        @{
-                            var mySel = Request.Form["select_" + i.ToString()];
-                            if (mySel == null) { mySel = "0"; }
-                            string cselect = "";
-                            <select name="select_@i" id="select_@i" onchange="CheckNoSelections(@i)">
-                                <option value="0">Select property...</option>
-                                @foreach (var item in Model.PropNameList)
-                                {
-                                    if (item.PropertyId.ToString() == mySel) { cselect = "Selected"; }
-                                    else { cselect = ""; }
-                                    <option value="@item.PropertyId" @cselect>@item.PropertyName</option>
-                                }
-                            </select>
-
-
-                            if (i < mySelections)
-                            {
-                                for (int j = 0; j <= mySelVal[i]; j++)
-                                {
-                                    var tempSelVal = Request.Form["selValue_" + i.ToString() + "_" + j.ToString()];
-                                    if (tempSelVal == null) { tempSelVal = "0"; }
-                                    string cselectValue = "";
-
-
-                                    <br />
-                                    <select name="selValue_@(i)_@(j)" id="selVal_@(i)_@(j)" onchange="CheckNoSelValues(@i,@j)">
-                                        <option value="0">Select value...</option>
-                                        @foreach (var term in Model.PropValueLists[i])
-                                        {
-                                            if (term.PropertyValueId.ToString() == tempSelVal) { cselectValue = "Selected"; }
-                                            else { cselectValue = ""; }
-                                            <option value="@term.PropertyValueId" @cselectValue>@term.PropertyValue</option>
-                                        }
-                                    </select>
-                                }
-
-                            }
-                        }
-                    </td>
-                }
+                @*// SELECTION - Khaki/yellow block on screen*@
+                @MakeSelection()
             </tr>
         }
     </table>
+
 
     <table>
         <tr>
             <td>
                 <table style="background-color:lawngreen">
-                    <tr>
                     <thead>GROUP BY</thead>
-        </tr>
+                    <tr>
+                        <td>
+                            @*// GROUP BY - Green block on screen*@
+                            @MakeGroupBy()
+                        </td>
+                    </tr>
 
-        <tr>
+                </table>
+            </td>
+
             <td>
-                @{
-                    string tempGroupBy = "";
-                    int noGroupBy = 0;
-                    if (Request.Form["noGroupBy"] != null)
-                    {
-                        noGroupBy = int.Parse(Request.Form["noGroupBy"]);
-                    }
-                    <INPUT id="noGroupBy" name="noGroupBy" value="@noGroupBy" type="hidden" />
-                    for (int i = 0; i <= noGroupBy; i++)
-                    {
-                        if (Request.Form["groupBy_" + i.ToString()] != null)
-                        {
-                            tempGroupBy = Request.Form["groupBy_" + i.ToString()];
-                        }
-                        <select name="groupBy_@i" id="groupBy_@i" onchange="">
-                            <option value="0">Select value...</option>
-                            @foreach (var term in Model.PropNameList)
-                            {
-                                var cSelGroupBy = "";
-                                if (term.PropertyId.ToString() == tempGroupBy) { cSelGroupBy = "Selected"; }
-                                else { cSelGroupBy = ""; }
-                                <option value="@term.PropertyId" @cSelGroupBy>@term.PropertyName</option>
-                            }
-                        </select>
+                <table style="background-color:lightgrey">
+                    <thead>SUM BY</thead>
+                    <tr>
+                        <td>
+                            @*// SUM BY - Grey block on screen*@
+                            @MakeSumBy()
+                        </td>
+                    </tr>
 
-                    }
-                    <button onclick="AddGroupBy()">+</button>
-                    <button onclick="RemoveGroupBy()">-</button>
-                }
+                </table>
+
             </td>
         </tr>
 
     </table>
-    </td>
 
-    <td>
-        <table style="background-color:lightgrey">
-            <thead>SUM BY</thead>
-            <tr>
-                <td>
-                    <select>
-                        @foreach (var item in Model.DataNameList)
+    <INPUT name="submit" id="submit" value="Update Selection" type="submit" />
+    <button id="calcButton">Calculate</button>
+    <script>
+        $('#calcButton').click(function () {
+            $('#calcFlag').val("YES");
+            $('#calcButton').submit();
+        });
+    </script>
+    <p>@Model.SqlString</p>
+}
+
+@helper MakeSelection()
+    {
+        int mySelections = 0;
+        List<int> mySelVal = new List<int>();
+        if (Request.Form["noSelections"] != null)
+        {
+            mySelections = int.Parse(Request.Form["noSelections"]);
+        }
+        for (int i = 0; i <= mySelections; i++)
+        {
+            if (Request.Form["noSelVal_" + i.ToString()] != null && Request.Form["noSelVal_" + i.ToString()].Trim() != "")
+            {
+                mySelVal.Add(int.Parse(Request.Form["noSelVal_" + i.ToString()]));
+            }
+            else
+            {
+                mySelVal.Add(0);
+            }
+            <td style="vertical-align:top">
+                <input id="noSelVal_@i" name="noSelVal_@i" value="@mySelVal[i]" type="hidden" />
+                @{
+                    var mySel = Request.Form["select_" + i.ToString()];
+                    if (mySel == null) { mySel = "0"; }
+                    string cselect = "";
+                    <select name="select_@i" id="select_@i" onchange="CheckNoSelections(@i)">
+                        <option value="0">Select property...</option>
+                        @foreach (var item in Model.PropNameList)
                         {
-                            <option value="@item.DataId">@item.Data_Name</option>
+                            if (item.PropertyId.ToString() == mySel) { cselect = "Selected"; }
+                            else { cselect = ""; }
+                            <option value="@item.PropertyId" @cselect>@item.PropertyName</option>
                         }
                     </select>
 
-                </td>
-            </tr>
 
-        </table>
+                    if (i < mySelections)
+                    {
+                        for (int j = 0; j <= mySelVal[i]; j++)
+                        {
+                            var tempSelVal = Request.Form["selValue_" + i.ToString() + "_" + j.ToString()];
+                            if (tempSelVal == null) { tempSelVal = "0"; }
+                            string cselectValue = "";
 
-    </td>
-    </tr>
 
-    </table>
-    <INPUT name="submit" id="submit" value="Update Selection" type="submit" />
+                            <br />
+                            <select name="selValue_@(i)_@(j)" id="selVal_@(i)_@(j)" onchange="CheckNoSelValues(@i,@j)">
+                                <option value="0">Select value...</option>
+                                @foreach (var term in Model.PropValueLists[i])
+                                {
+                                    if (term.PropertyValueId.ToString() == tempSelVal) { cselectValue = "Selected"; }
+                                    else { cselectValue = ""; }
+                                    <option value="@term.PropertyValueId" @cselectValue>@term.PropertyValue</option>
+                                }
+                            </select>
+                        }
+
+                    }
+                }
+            </td>
+        }
+
 }
-<script type="text/javascript">
+
+@helper MakeGroupBy()
+    {
+        string tempGroupBy = "";
+        int noGroupBy = 0;
+        if (Request.Form["noGroupBy"] != null)
+        {
+            noGroupBy = int.Parse(Request.Form["noGroupBy"]);
+        }
+        <INPUT id="noGroupBy" name="noGroupBy" value="@noGroupBy" type="hidden" />
+        for (int i = 0; i <= noGroupBy; i++)
+        {
+            if (Request.Form["groupBy_" + i.ToString()] != null)
+            {
+                tempGroupBy = Request.Form["groupBy_" + i.ToString()];
+            }
+            <select name="groupBy_@i" id="groupBy_@i" onchange="InitUpdate()">
+                <option value="0">Select value...</option>
+                @foreach (var term in Model.PropNameList)
+                {
+                    var cSelGroupBy = "";
+                    if (term.PropertyId.ToString() == tempGroupBy) { cSelGroupBy = "Selected"; }
+                    else { cSelGroupBy = ""; }
+                    <option value="@term.PropertyId" @cSelGroupBy>@term.PropertyName</option>
+                }
+            </select>
+
+        }
+        <button onclick="AddGroupBy()">+</button>
+        <button onclick="RemoveGroupBy()">-</button>
+}
+
+@helper MakeSumBy()
+    {
+        string tempSumBy = "";
+        int noSumBy = 0;
+        if (Request.Form["noSumBy"] != null)
+        {
+            noSumBy = int.Parse(Request.Form["noSumBy"]);
+        }
+        <INPUT id="noSumBy" name="noSumBy" value="@noSumBy" type="hidden" />
+        for (int i = 0; i <= noSumBy; i++)
+        {
+            if (Request.Form["SumBy_" + i.ToString()] != null)
+            {
+                tempSumBy = Request.Form["sumBy_" + i.ToString()];
+            }
+            <select name="sumBy_@i" id="sumBy_@i" onchange="">
+                <option value="0">Select value...</option>
+                @foreach (var term in Model.DataNameList)
+                {
+                    var cSelSumBy = "";
+                    if (term.DataId.ToString() == tempSumBy) { cSelSumBy = "Selected"; }
+                    else { cSelSumBy = ""; }
+                    <option value="@term.DataId" @cSelSumBy>@term.Data_Name</option>
+                }
+            </select>
+
+        }
+        <button onclick="AddSumBy()">+</button>
+        <button onclick="RemoveSumBy()">-</button>
+}
+
+<script>
     function CheckNoSelections(i) {
         if (i == document.getElementById("noSelections").value) {
             document.getElementById("noSelections").value++;
@@ -163,6 +217,16 @@
     function RemoveGroupBy() {
         if (document.getElementById("noGroupBy").value > 0) {
             document.getElementById("noGroupBy").value--;
+        }
+    }
+
+    function AddSumBy() {
+        document.getElementById("noSumBy").value++;
+    }
+
+    function RemoveSumBy() {
+        if (document.getElementById("noSumBy").value > 0) {
+            document.getElementById("noSumBy").value--;
         }
     }
 

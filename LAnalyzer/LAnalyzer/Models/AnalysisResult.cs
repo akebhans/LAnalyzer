@@ -13,5 +13,6 @@ namespace LAnalyzer.Models
         public List<PropRow> PropRowList { get; set; }
         public List<DataName> DataNameList { get; set; }
         public List<DataRow> DataRowList { get; set; }
+        public string SqlString { get; set; }
     }
 }

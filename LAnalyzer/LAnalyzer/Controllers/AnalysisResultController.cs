@@ -15,11 +15,12 @@ namespace LAnalyzer.Controllers
         // GET: AnalysisResult
         public ActionResult Index(int id)
         {
+            var calcFlag = Request.Form["calcFlag"];
+
             int noSel = 0;
 
             List<int> condIdList = new List<int>();
             List<List<PropValue>> condValueLists = new List<List<PropValue>>();
-
 
             if (Request.Form["noSelections"] != null)
             {
@@ -65,8 +66,35 @@ namespace LAnalyzer.Controllers
 
             myResult.DataNameList = myDataNameList;
 
+            if (calcFlag == "YES") myResult.SqlString = GetSql();
+
             return View(myResult);
 
+        }
+
+        public string GetSql()
+        {
+            string sqlStr = "SELECT RowID FROM PropRows ", cWhere = "", cTempStr;
+            int noSel = 0;
+            if (Request.Form["noSelections"] != null)
+            {
+                noSel = int.Parse(Request.Form["noSelections"]);
+            }
+
+            for (int i = 0; i < noSel; i++)
+            {
+                int j = 0;
+                while (Request.Form["selValue_"+i.ToString()+"_"+j.ToString()] != null)
+                {
+                    cTempStr = Request.Form["selValue_" + i.ToString() + "_" + j.ToString()];
+                    if (cWhere == "") cWhere = " WHERE PropertyValueId IN (" + cTempStr;
+                    else if  (cTempStr != "0") cWhere = cWhere + ", " + Request.Form["selValue_" + i.ToString() + "_" + j.ToString()];
+                    j++;
+                }
+                if (cWhere != "") cWhere = cWhere + ")";
+            }
+            sqlStr = sqlStr + cWhere;
+            return sqlStr;
         }
 
         public List<List<PropValue>> GetCondValues(List<int> cIdList)
@@ -88,8 +116,9 @@ namespace LAnalyzer.Controllers
         }
 
         // GET: AnalysisResult/Details/5
-        public ActionResult Details(int id)
+        public ActionResult Analyze()
         {
+            var noSel = Request.Form["noSelections"];
             return View();
         }
 
