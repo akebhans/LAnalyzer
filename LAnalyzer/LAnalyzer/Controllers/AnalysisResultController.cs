@@ -66,15 +66,127 @@ namespace LAnalyzer.Controllers
 
             myResult.DataNameList = myDataNameList;
 
-            if (calcFlag == "YES") myResult.SqlString = GetSql();
+            if (calcFlag == "YES") myResult.SqlString = GetSqlSumBy(GetSqlCondition(), id);
 
             return View(myResult);
 
         }
 
-        public string GetSql()
+        public string GetSqlSumBy(string condSql, int id)
         {
-            string sqlStr = "SELECT RowID FROM PropRows ", cWhere = "", cTempStr;
+            string groupByStr = "", retStr = "", sqlStart = "", joinStr = "", tempProperty;
+            List<string> sqlGroupBy = new List<string>();
+            List<string> groupByList = new List<string>();
+            List<string> sumByList = new List<string>();
+            int noGroupBy = 0, noSumBy = 0, i;
+            if (Request.Form["noGroupBy"] != null)
+            {
+                noGroupBy = int.Parse(Request.Form["noGroupBy"]);
+            }
+
+            if (Request.Form["noSumBy"] != null)
+            {
+                noSumBy = int.Parse(Request.Form["noSumBy"]);
+            }
+
+
+
+            groupByStr = "SELECT DR.DataValue, DR.DataId,DR.RowId ,PV.PropertyId,PV.PropertyValue, PN.ProjectId " +
+                " FROM DataRows DR JOIN " + condSql + " CondView ON DR.RowId = CondView.RowId JOIN PropRows PR ON CondView.RowId = PR.RowId " +
+                " JOIN PropValues PV ON PR.PropertyValueId = PV.PropertyValueId " +
+                " JOIN PropNames PN ON PV.PropertyId = PN.PropertyId " +
+                " JOIN DataNames DN ON PN.ProjectId = DN.ProjectId AND DR.DataId = DN.DataId " +
+                " WHERE PN.ProjectId = " + id.ToString();
+
+            // FORTSÄTT HÄR!!
+            bool firstGroupBy = true;
+            for (i = 0; i <= noGroupBy; i++)
+            {
+                if (Request.Form["groupBy_" + i.ToString()] != null)
+                {
+                    tempProperty = Request.Form["groupBy_" + i.ToString()].ToString();
+                    sqlGroupBy.Add(groupByStr + " AND PV.PropertyId = " + tempProperty);
+                    groupByList.Add(tempProperty);
+
+                    if (firstGroupBy)
+                    {
+                        //sqlStart = GetPropName(int.Parse(tempProperty));
+                        sqlStart = " T1.PropertyValue";
+                        firstGroupBy = false;
+                    }
+                    else
+                    {
+                        //sqlStart = sqlStart + ", " + GetPropName(int.Parse(tempProperty));
+                        sqlStart = sqlStart + ", T" + (i+1).ToString() + ".Propertyvalue ";
+                    }
+                }
+            }
+
+            for (i = 0; i <= noSumBy; i++)
+            {
+                if (Request.Form["sumBy_" + i.ToString()] != null)
+                {
+                    sumByList.Add(Request.Form["sumBy_" + i.ToString()]);
+                }
+
+            }
+
+            bool firstSqlGroupBy = true;
+            i = 1;
+            string cT;
+            foreach (var term in sqlGroupBy)
+            {
+                if (firstSqlGroupBy)
+                {
+                    retStr = " FROM (" + term;
+                    firstSqlGroupBy = false;
+                }
+                else
+                {
+                    cT = "T" + i.ToString(); 
+                    retStr = retStr + ") T1 JOIN (" + term + ") " + cT +
+                        " ON T1.RowId = "+cT+".RowId AND T1.ProjectId = "+cT+".ProjectId AND T1.DataId = "+cT+".DataId ";
+                }
+                i++;
+            }
+
+            //retStr = retStr + "GROUP BY " + sqlStart;
+
+            // Just alllow one sum result
+            bool tempFirst = true;
+            foreach (var term in sumByList)
+            {
+                if (tempFirst)
+                {
+                    retStr = retStr + " WHERE T1.DataId = " + term + " GROUP BY " + sqlStart;
+                    sqlStart = sqlStart + ", SUM(T1.DataValue) ";
+                    tempFirst = false;
+                }
+
+            }
+
+            //foreach (var term in groupByList)
+            //{
+            //    sqlStart = 
+            //}
+
+            retStr = "SELECT " + sqlStart + retStr;
+
+
+            return retStr;
+        }
+
+        private string GetPropName(int propId)
+        {
+            PropName myProperty = new PropName();
+            myProperty.PropertyName = db.PropertyName.Find(propId).PropertyName;
+
+            return myProperty.PropertyName;
+        }
+
+        public string GetSqlCondition()
+        {
+            string sqlStr = "", cWhere = "", locSelection, tempWhere, sqlStart = "SELECT ";
             int noSel = 0;
             if (Request.Form["noSelections"] != null)
             {
@@ -84,16 +196,39 @@ namespace LAnalyzer.Controllers
             for (int i = 0; i < noSel; i++)
             {
                 int j = 0;
-                while (Request.Form["selValue_"+i.ToString()+"_"+j.ToString()] != null)
+                tempWhere = "";
+
+                if (sqlStr == "")
                 {
-                    cTempStr = Request.Form["selValue_" + i.ToString() + "_" + j.ToString()];
-                    if (cWhere == "") cWhere = " WHERE PropertyValueId IN (" + cTempStr;
-                    else if  (cTempStr != "0") cWhere = cWhere + ", " + Request.Form["selValue_" + i.ToString() + "_" + j.ToString()];
+                    sqlStr = "SELECT T0.RowID FROM PropRows T" + i.ToString() + " ";
+                }
+                else
+                {
+                    sqlStr = sqlStr + " JOIN PropRows T" + i.ToString() + " ON T" + (i - 1).ToString() + ".RowId = T" + i.ToString() + ".RowId";
+                }
+
+                while (Request.Form["selValue_" + i.ToString() + "_" + j.ToString()] != null)
+                {
+                    locSelection = Request.Form["selValue_" + i.ToString() + "_" + j.ToString()];
+                    if (locSelection != "0")
+                    {
+                        if (tempWhere == "")
+                        {
+                            if (cWhere != "") tempWhere = " AND ";
+                            tempWhere = tempWhere + "T" + i.ToString() + ".PropertyValueId IN (" + locSelection;
+                        }
+                        else if (locSelection != "0") tempWhere = tempWhere + ", " + locSelection;
+                        if (cWhere == "") cWhere = " WHERE ";
+                    }
                     j++;
                 }
-                if (cWhere != "") cWhere = cWhere + ")";
+                if (tempWhere != "")
+                {
+                    tempWhere = tempWhere + ") ";
+                    cWhere = cWhere + tempWhere;
+                }
             }
-            sqlStr = sqlStr + cWhere;
+            sqlStr = "(" + sqlStr + cWhere + ") ";
             return sqlStr;
         }
 
@@ -104,8 +239,8 @@ namespace LAnalyzer.Controllers
             {
                 List<PropValue> locList = new List<PropValue>();
                 var propValues = from pV in db.PropertyValue
-                                where pV.PropertyId.Equals(item)
-                                select pV;
+                                 where pV.PropertyId.Equals(item)
+                                 select pV;
                 foreach (var term in propValues)
                 {
                     locList.Add(term);
