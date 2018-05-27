@@ -1,20 +1,33 @@
 ﻿
 @model LAnalyzer.Models.CSVFile
-@using Newtonsoft.Json;
+@*@using Newtonsoft.Json;*@
 @{
-    ViewBag.Title = "FileParser";
+    ViewBag.Title = "File Parser";
+    string dataTypes = " ";
+    bool dataCheck = true;
+
+    foreach (var term in Model.TypeList)
+    {
+        dataTypes = dataTypes + term;
+    }
+    if (dataTypes.IndexOf("S") == 0 || dataTypes.IndexOf("N") == 0)
+    {
+        dataCheck = false;
+        ViewBag.Message = "Something is wrong with input file - probably it is missing numeric data!!!";
+    }
+
 }
 
-<h2>FileParser</h2>
+
+<h2>File Parser</h2>
 
 @using (Html.BeginForm())
 {
     @Html.AntiForgeryToken()
 
     <div class="form-actions no-color">
-        <input type="submit" value="Save" class="btn btn-default" />
-        @{
-            @Html.ActionLink("Save_File_Data", "Save_File_Data", new { project = Model.Project, fileName= ViewBag.Content })
+        @if (dataCheck) {
+            @Html.ActionLink("Save File Data to Project", "Save_File_Data", new { project = Model.Project, fileName= ViewBag.Content })
             //Html.ActionLink("Save_File_Data", "Save_File_Data", new { myFile = myFile });
         }
     </div>

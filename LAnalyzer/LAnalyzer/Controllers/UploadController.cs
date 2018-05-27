@@ -133,7 +133,8 @@ namespace LAnalyzer.Controllers
             var valueList = new List<List<string>>();
             var typeList = new List<string>();
             var path = Path.Combine(Server.MapPath("~/App_Data/Files/"), csvFile);
-            var parser = new Microsoft.VisualBasic.FileIO.TextFieldParser(path);
+            //var parser = new Microsoft.VisualBasic.FileIO.TextFieldParser(path);
+            var parser = new Microsoft.VisualBasic.FileIO.TextFieldParser(path, System.Text.Encoding.UTF7);
             parser.TextFieldType = Microsoft.VisualBasic.FileIO.FieldType.Delimited;
             parser.SetDelimiters(new string[] { ";" });
             int i = 0;

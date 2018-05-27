@@ -1,9 +1,9 @@
 ﻿@model LAnalyzer.Models.AnalysisResult
 @{
-    ViewBag.Title = "Index";
+    ViewBag.Title = Model.ProjectName;
 }
 
-<h2>Index</h2>
+<h2>Project : @Model.ProjectName</h2>
 @using (Html.BeginForm("Index", "AnalysisResult", FormMethod.Post))
 {
     int mySelections = 0;
@@ -26,7 +26,8 @@
             </tr>
         }
     </table>
-
+    <INPUT name="submit" id="submit" value="Update Selection" type="submit" />
+    <button id="calcButton">Calculate</button>
 
     <table>
         <tr>
@@ -34,10 +35,8 @@
                 <table style="background-color:lawngreen">
                     <thead>GROUP BY</thead>
                     <tr>
-                        <td>
-                            @*// GROUP BY - Green block on screen*@
-                            @MakeGroupBy()
-                        </td>
+                        @*// GROUP BY - Green block on screen*@
+                        @MakeGroupBy()
                     </tr>
 
                 </table>
@@ -47,10 +46,8 @@
                 <table style="background-color:lightgrey">
                     <thead>SUM BY</thead>
                     <tr>
-                        <td>
-                            @*// SUM BY - Grey block on screen*@
-                            @MakeSumBy()
-                        </td>
+                        @*// SUM BY - Grey block on screen*@
+                        @MakeSumBy()
                     </tr>
 
                 </table>
@@ -60,16 +57,22 @@
 
     </table>
 
-    <INPUT name="submit" id="submit" value="Update Selection" type="submit" />
-    <button id="calcButton">Calculate</button>
-    <script>
-        $('#calcButton').click(function () {
-            $('#calcFlag').val("YES");
-            $('#calcButton').submit();
-        });
-    </script>
-    <p>@Model.SqlString</p>
+    @*<p>@Model.SqlString</p>*@
+
+    @*<INPUT name="submit" id="submit" value="Update Selection" type="submit" />
+        <button id="calcButton">Calculate</button>*@
+
+    if (Request.Form["select_0"] != null && Request.Form["select_0"] != null)
+    {
+        <script>
+            $('#calcButton').click(function () {
+                $('#calcFlag').val("YES");
+                $('#calcButton').submit();
+            });
+        </script>
+    }
 }
+
 
 @helper MakeSelection()
     {
@@ -149,20 +152,39 @@
             {
                 tempGroupBy = Request.Form["groupBy_" + i.ToString()];
             }
-            <select name="groupBy_@i" id="groupBy_@i" onchange="InitUpdate()">
-                <option value="0">Select value...</option>
-                @foreach (var term in Model.PropNameList)
-                {
-                    var cSelGroupBy = "";
-                    if (term.PropertyId.ToString() == tempGroupBy) { cSelGroupBy = "Selected"; }
-                    else { cSelGroupBy = ""; }
-                    <option value="@term.PropertyId" @cSelGroupBy>@term.PropertyName</option>
-                }
-            </select>
-
+            <td>
+                <select name="groupBy_@i" id="groupBy_@i" onchange="InitUpdate()">
+                    <option value="0">Select value...</option>
+                    @foreach (var term in Model.PropNameList)
+                    {
+                        var cSelGroupBy = "";
+                        if (term.PropertyId.ToString() == tempGroupBy) { cSelGroupBy = "Selected"; }
+                        else { cSelGroupBy = ""; }
+                        <option value="@term.PropertyId" @cSelGroupBy>@term.PropertyName</option>
+                    }
+                </select>
+            </td>
         }
-        <button onclick="AddGroupBy()">+</button>
-        <button onclick="RemoveGroupBy()">-</button>
+        <td>
+            <button onclick="AddGroupBy()">+</button>
+            <button onclick="RemoveGroupBy()">-</button>
+        </td>
+        if (Model.ResultMatrix != null)
+        {
+            foreach (var term in Model.ResultMatrix)
+            {
+                <tr>
+                    @{
+                        foreach (var term1 in term.PropertyName)
+                        {
+                            <td>@term1</td>
+                        }
+                    }
+                </tr>
+
+            }
+        }
+
 }
 
 @helper MakeSumBy()
@@ -180,20 +202,60 @@
             {
                 tempSumBy = Request.Form["sumBy_" + i.ToString()];
             }
-            <select name="sumBy_@i" id="sumBy_@i" onchange="">
-                <option value="0">Select value...</option>
-                @foreach (var term in Model.DataNameList)
-                {
-                    var cSelSumBy = "";
-                    if (term.DataId.ToString() == tempSumBy) { cSelSumBy = "Selected"; }
-                    else { cSelSumBy = ""; }
-                    <option value="@term.DataId" @cSelSumBy>@term.Data_Name</option>
-                }
-            </select>
-
+            <td>
+                <select name="sumBy_@i" id="sumBy_@i" onchange="">
+                    <option value="0">Select value...</option>
+                    @foreach (var term in Model.DataNameList)
+                    {
+                        var cSelSumBy = "";
+                        if (term.DataId.ToString() == tempSumBy) { cSelSumBy = "Selected"; }
+                        else { cSelSumBy = ""; }
+                        <option value="@term.DataId" @cSelSumBy>@term.Data_Name</option>
+                    }
+                </select>
+            </td>
         }
-        <button onclick="AddSumBy()">+</button>
-        <button onclick="RemoveSumBy()">-</button>
+        <td>
+
+            <button onclick="AddSumBy()">+</button>
+            <button onclick="RemoveSumBy()">-</button>
+        </td>
+        if (Model.ResultMatrix != null)
+        {
+            foreach (var term in Model.ResultMatrix)
+            {
+                <tr>
+                    @{
+                        foreach (var term1 in term.DataSum)
+                        {
+                            <td style="text-align:right">@term1</td>
+                        }
+                    }
+                </tr>
+
+            }
+        }
+
+}
+
+@helper MakeResultMatrix()
+    {
+        foreach (var term in Model.ResultMatrix)
+        {
+            <tr>
+                @{
+                    foreach (var myProp in term.PropertyName)
+                    {
+                        <td>@myProp</td>
+                    }
+                    foreach (var myDataSum in term.DataSum)
+                    {
+                        <td>@myDataSum</td>
+                    }
+                }
+
+            </tr>
+        }
 }
 
 <script>

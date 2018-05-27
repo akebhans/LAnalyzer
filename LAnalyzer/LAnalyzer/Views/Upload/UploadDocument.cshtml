@@ -1,9 +1,9 @@
 ﻿@{
-    ViewBag.Title = "UploadDocument";
+    ViewBag.Title = "Upload data file to project";
     string myMessage = ViewBag.Message;
 }
 
-<h2>UploadDocument</h2>
+<h2>Upload data file to project</h2>
 
 @using (Html.BeginForm("Upload", "Upload", FormMethod.Post, new { enctype = "multipart/form-data" }))
 {

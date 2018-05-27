@@ -6,6 +6,9 @@ using System.Web;
 using System.Web.Mvc;
 using LAnalyzer.Context;
 using LAnalyzer.Models;
+using System.Configuration;
+using System.Data.SqlClient;
+
 
 namespace LAnalyzer.Controllers
 {
@@ -66,10 +69,69 @@ namespace LAnalyzer.Controllers
 
             myResult.DataNameList = myDataNameList;
 
-            if (calcFlag == "YES") myResult.SqlString = GetSqlSumBy(GetSqlCondition(), id);
+
+
+            if (calcFlag == "YES")
+            {
+                myResult.SqlString = GetSqlSumBy(GetSqlCondition(), id);
+                //if (calcFlag == "YES") myResult.SqlString = GetSqlCondition();
+
+                if (myResult.SqlString != "") myResult.ResultMatrix = GetResult(myResult.SqlString);
+
+            }
 
             return View(myResult);
 
+        }
+
+        public List<ResultRow> GetResult(string sqlStr)
+        {
+            string ADOcon = ConfigurationManager.ConnectionStrings["ADOLucroAnalyzer"].ConnectionString;
+            SqlConnection DbConnection = new SqlConnection(ADOcon);
+            DbConnection.Open();
+
+            SqlCommand resultCmd = new SqlCommand(sqlStr, DbConnection);
+
+            SqlDataReader myReader = resultCmd.ExecuteReader();
+
+            List<ResultRow> myResult = new List<ResultRow>();
+
+
+            while (myReader.Read())
+            {
+                List<string> myPropRow = new List<string>();
+                List<double> myDataRow = new List<double>();
+                ResultRow myResultRow = new ResultRow();
+
+                for (int i = 0; i < myReader.FieldCount; i++)
+                {
+                    if (myReader[i] is string)
+                    {
+                        myPropRow.Add(myReader[i].ToString());
+                    }
+                    else
+                    {
+                        myDataRow.Add(double.Parse(myReader[i].ToString()));
+                    }
+                }
+
+                myResultRow.PropertyName = myPropRow;
+                myResultRow.DataSum = myDataRow;
+                myResult.Add(myResultRow);
+            }
+
+            //foreach (var term in myResult)
+            //{
+            //    List<string> myPropRow = new List<string>();
+            //    List<double> myDataRow = new List<double>();
+            //    if (term is ResultRow)
+            //    {
+
+            //    }
+            //    if (term is string) myPropRow.Add
+            //}
+
+            return myResult;
         }
 
         public string GetSqlSumBy(string condSql, int id)
@@ -105,20 +167,24 @@ namespace LAnalyzer.Controllers
                 if (Request.Form["groupBy_" + i.ToString()] != null)
                 {
                     tempProperty = Request.Form["groupBy_" + i.ToString()].ToString();
-                    sqlGroupBy.Add(groupByStr + " AND PV.PropertyId = " + tempProperty);
-                    groupByList.Add(tempProperty);
+                    if (tempProperty != "0")
+                    {
+                        sqlGroupBy.Add(groupByStr + " AND PV.PropertyId = " + tempProperty);
+                        groupByList.Add(tempProperty);
 
-                    if (firstGroupBy)
-                    {
-                        //sqlStart = GetPropName(int.Parse(tempProperty));
-                        sqlStart = " T1.PropertyValue";
-                        firstGroupBy = false;
+                        if (firstGroupBy)
+                        {
+                            //sqlStart = GetPropName(int.Parse(tempProperty));
+                            sqlStart = " T1.PropertyValue";
+                            firstGroupBy = false;
+                        }
+                        else
+                        {
+                            //sqlStart = sqlStart + ", " + GetPropName(int.Parse(tempProperty));
+                            sqlStart = sqlStart + ", T" + (i + 1).ToString() + ".Propertyvalue ";
+                        }
                     }
-                    else
-                    {
-                        //sqlStart = sqlStart + ", " + GetPropName(int.Parse(tempProperty));
-                        sqlStart = sqlStart + ", T" + (i+1).ToString() + ".Propertyvalue ";
-                    }
+
                 }
             }
 
@@ -139,13 +205,14 @@ namespace LAnalyzer.Controllers
                 if (firstSqlGroupBy)
                 {
                     retStr = " FROM (" + term;
+                    if (sqlGroupBy.Count == 1) retStr = retStr + ") T1 ";
                     firstSqlGroupBy = false;
                 }
                 else
                 {
-                    cT = "T" + i.ToString(); 
+                    cT = "T" + i.ToString();
                     retStr = retStr + ") T1 JOIN (" + term + ") " + cT +
-                        " ON T1.RowId = "+cT+".RowId AND T1.ProjectId = "+cT+".ProjectId AND T1.DataId = "+cT+".DataId ";
+                        " ON T1.RowId = " + cT + ".RowId AND T1.ProjectId = " + cT + ".ProjectId AND T1.DataId = " + cT + ".DataId ";
                 }
                 i++;
             }
@@ -156,12 +223,24 @@ namespace LAnalyzer.Controllers
             bool tempFirst = true;
             foreach (var term in sumByList)
             {
-                if (tempFirst)
+                if (term != "0")
                 {
-                    retStr = retStr + " WHERE T1.DataId = " + term + " GROUP BY " + sqlStart;
-                    sqlStart = sqlStart + ", SUM(T1.DataValue) ";
-                    tempFirst = false;
+                    // tempFirst only used to allow only one sumBy  
+                    if (tempFirst)
+                    {
+                        if (sqlGroupBy.Count == 1)
+                        {
+                            retStr = retStr + " WHERE T1.DataId = " + term + " GROUP BY " + sqlStart;
+                        }
+                        else
+                        {
+                            retStr = retStr + " AND T1.DataId = " + term + " GROUP BY " + sqlStart;
+                        }
+                        sqlStart = sqlStart + ", SUM(T1.DataValue) ";
+                        tempFirst = false;
+                    }
                 }
+
 
             }
 
@@ -170,8 +249,11 @@ namespace LAnalyzer.Controllers
             //    sqlStart = 
             //}
 
-            retStr = "SELECT " + sqlStart + retStr;
 
+            if (retStr != "")
+            {
+                retStr = "SELECT DISTINCT " + sqlStart + retStr;
+            }
 
             return retStr;
         }
@@ -228,7 +310,14 @@ namespace LAnalyzer.Controllers
                     cWhere = cWhere + tempWhere;
                 }
             }
-            sqlStr = "(" + sqlStr + cWhere + ") ";
+            if (sqlStr != "")
+            {
+                sqlStr = "(" + sqlStr + cWhere + ") ";
+            }
+            else
+            {
+                sqlStr = "(SELECT DISTINCT RowID FROM PropRows) ";
+            }
             return sqlStr;
         }
 

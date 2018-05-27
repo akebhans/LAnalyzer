@@ -1,7 +1,7 @@
 ﻿@model IEnumerable<LAnalyzer.Models.Project>
 
 @{
-    ViewBag.Title = "ProjectList";
+    ViewBag.Title = "Project List";
     if (TempData["shortMessage"] != null)
     {
         string text = TempData["shortMessage"].ToString();
@@ -9,15 +9,12 @@
 
 }
 
-<h2>ProjectList</h2>
+<h2>Project List</h2>
 
-<p>
-    @Html.ActionLink("Create New", "Create")
-</p>
 <table class="table">
     <tr>
         <th>
-            @Html.DisplayNameFor(model => model.ProjectName)
+            Project Name
         </th>
         <th></th>
     </tr>
@@ -29,8 +26,15 @@
                 @Html.DisplayFor(modelItem => item.ProjectName)
             </td>
             <td width="30%">
-                @*@Html.ActionLink("Edit", "Edit", new { id=item.ProjectId }) |
-                    @Html.ActionLink("Details", "Details", new { id=item.ProjectId }) |*@
+                @if (item.Status.IsEmpty())
+                {
+                    {
+                        @Html.ActionLink("Analyze", "../AnalysisResult/Index", new { id = item.ProjectId })
+                    }
+                }
+            </td>
+
+            <td width="30%">
                 @if (item.Status.IsEmpty() || item.Status.Trim() == "")
                 {
                     @Html.ActionLink("Delete", "Delete", new { id = item.ProjectId })
@@ -42,14 +46,6 @@
                 else if (item.Status == "U")
                 {
                     <p>Update of project is ongoing ..</p>
-                }
-            </td>
-            <td width="30%">
-                @if (item.Status.IsEmpty())
-                {
-                    {
-                        @Html.ActionLink("Analyze", "../AnalysisResult/Index", new { id = item.ProjectId })
-                    }
                 }
             </td>
         </tr>
