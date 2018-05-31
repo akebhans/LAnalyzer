@@ -1,0 +1,67 @@
+﻿
+@model LAnalyzer.Models.CSVFile
+@*@using Newtonsoft.Json;*@
+@{
+    ViewBag.Title = "File Parser";
+    string dataTypes = " ";
+    bool dataCheck = true;
+
+    foreach (var term in Model.TypeList)
+    {
+        dataTypes = dataTypes + term;
+    }
+    if (dataTypes.IndexOf("S") == 0 || dataTypes.IndexOf("N") == 0)
+    {
+        dataCheck = false;
+        ViewBag.Message = "Something is wrong with input file - probably it is missing numeric data!!!";
+    }
+
+}
+
+
+<h2>File Parser</h2>
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+
+    <div class="form-actions no-color">
+        @if (dataCheck) {
+            @Html.ActionLink("Save File Data to Project", "Save_File_Data", new { project = Model.Project, fileName= ViewBag.Content })
+            //Html.ActionLink("Save_File_Data", "Save_File_Data", new { myFile = myFile });
+        }
+    </div>
+}
+
+<table>
+    <tr style="font-weight:bold">
+        <td>Column Name</td>
+        <td>Data Type</td>
+        @for (int i = 1; i < 11; i++)
+        {
+            <td>Row @i</td>
+        }
+
+    </tr>
+
+    @{
+        int j = 0;
+        foreach (var termName in Model.NameList)
+        {
+
+            <tr>
+                <td>@termName</td>
+                <td>@Model.TypeList[j]</td>
+                @for (int i = 0; i < 10; i++)
+                {
+                    var x = Model.ValueList.ToList()[i];
+                    <td>@(((List<string>)x)[j])</td>
+                }
+
+            </tr>
+            j++;
+        }
+    }
+
+</table>
+

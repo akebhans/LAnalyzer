@@ -76,12 +76,189 @@ namespace LAnalyzer.Controllers
                 myResult.SqlString = GetSqlSumBy(GetSqlCondition(), id);
                 //if (calcFlag == "YES") myResult.SqlString = GetSqlCondition();
 
-                if (myResult.SqlString != "") myResult.ResultMatrix = GetResult(myResult.SqlString);
+                List<string> groupByStr = new List<string>();
+                List<string> sumByStr = new List<string>();
+
+                string condSqlStr = GetSqlCondition();
+
+                groupByStr = GetGroupByStr(condSqlStr);
+                sumByStr = GetSumByStr(condSqlStr, id);
+
+                List<ResultRow> myMatrix = new List<ResultRow>();
+
+                myMatrix = GetMatrix(groupByStr, sumByStr);
+
+
+                //if (myResult.SqlString != "") myResult.ResultMatrix = GetResult(myResult.SqlString);
+                if (myResult.SqlString != "") myResult.ResultMatrix = GetMatrix(groupByStr, sumByStr);
 
             }
 
             return View(myResult);
 
+        }
+
+        public List<ResultRow> GetMatrix(List<string> groupStrList, List<string> sumStrList)
+        {
+            List<ResultRow> retMatrix = new List<ResultRow>();
+            ResultRow tempRow = new ResultRow();
+            string sqlStr = "", groupByString = "";
+            bool isFirst = true;
+            for (int i = 1; i < groupStrList.Count; i++)
+            {
+                if (isFirst)
+                {
+                    sqlStr = "SELECT " + groupStrList[i];
+                    groupByString = groupStrList[i];
+                    isFirst = false;
+                }
+                else
+                {
+                    sqlStr += ", " + groupStrList[i]; 
+                    groupByString += ", " + groupStrList[i];
+                }
+            }
+            for (int i = 1; i < sumStrList.Count; i++)
+            {
+                sqlStr += ", SUM(" + sumStrList[i] + ")";
+            }
+
+            sqlStr += " FROM " + groupStrList[0] + " JOIN (" + sumStrList[0] + " ) SV1 ON V0.RowId = SV1.RowId GROUP BY " + groupByString;
+
+
+
+            return GetResult(sqlStr);
+        }
+
+        public List<string> GetSumByStr(string myCondStr, int myProjId)
+        {
+            List<string> retStr = new List<string>(); 
+            List<string> groupByList = new List<string>();
+            List<string> sumByList = new List<string>();
+
+            string sumByStr = "", sqlStart = "", sqlWhere = "";
+
+            int noSumBy = 0, i;
+
+            if (Request.Form["noSumBy"] != null)
+            {
+                noSumBy = int.Parse(Request.Form["noSumBy"]);
+            }
+
+            bool tempFirst = true;
+            for (i = 0; i <= noSumBy; i++)
+            {
+                if (Request.Form["sumBy_" + i.ToString()] != null)
+                {
+                    sumByList.Add("DV_" + i.ToString());
+                    if (tempFirst)
+                    {
+                        sumByStr = myCondStr + " CondView LEFT JOIN DataRows DR_" + i.ToString() + " ON CondView.RowId = DR_" + i.ToString() + ".RowId" +
+                            " JOIN DataNames DN_" + i.ToString() + " ON DR_" + i.ToString() + ".DataId = DN_" + i.ToString() + ".DataId";
+                        sqlStart = "SELECT CondView.RowId, DR_" + i.ToString() + ".DataValue AS DV_" + i.ToString();
+                        sqlWhere = " WHERE DN_" + i.ToString() + ".ProjectId = " + myProjId.ToString() + " AND DN_" + i.ToString() + ".DataId = " + Request.Form["sumBy_" + i.ToString()];
+                        tempFirst = false;
+                    }
+                    else
+                    {
+                        sumByStr += " LEFT JOIN DataRows DR_" + i.ToString() + " ON CondView.RowId = DR_" + i.ToString() + ".RowId" +
+                                    " JOIN DataNames DN_" + i.ToString() + " ON DR_" + i.ToString() + ".DataId = DN_" + i.ToString() + ".DataId";
+                        sqlStart += ", DR_" + i.ToString() + ".DataValue AS DV_" + i.ToString();
+                        sqlWhere += " AND DN_" + i.ToString() + ".ProjectId = " + myProjId.ToString() + " AND DN_" + i.ToString() + ".DataId = " + Request.Form["sumBy_" + i.ToString()];
+                    }
+                }
+
+            }
+            sqlStart += " FROM ";
+
+            retStr.Add(sqlStart + sumByStr + sqlWhere);
+
+            i = 0;
+            foreach (var term in sumByList)
+            {
+                retStr.Add(sumByList[i]);
+                i++;
+            } 
+            return retStr;
+        }
+
+        public List<string> GetGroupByStr(string myCondStr)
+        {
+            List<string> retStr = new List<string>();
+            List<string> groupByList = new List<string>();
+
+            int noGroupBy = 0;
+
+            if (Request.Form["noGroupBy"] != null)
+            {
+                noGroupBy = int.Parse(Request.Form["noGroupBy"]);
+            }
+
+
+            string groupByStr = "SELECT RowId FROM DataRows ";
+
+
+
+            //            (SELECT T0.RowID FROM PropRows T0 JOIN PropRows T1 ON T0.RowId = T1.RowId WHERE T0.PropertyValueId IN(69305) AND T1.PropertyValueId IN(69308, 69310, 69304) ) CV left Join
+            //PropRows PR ON CV.RowID = PR.RowID
+
+            string preGroupBy = "", subGroupBy = "", oneGroupBy = "";
+
+            oneGroupBy = "SELECT CV.ROWID, PV.PropertyValue AS [_GroupBy_], PN.ProjectId FROM " + myCondStr + " CV LEFT JOIN " +
+                "PropRows PR ON CV.RowID = PR.RowID LEFT JOIN " +
+                "(SELECT* FROM PropValues WHERE PropertyId = #_PropertyId#) PV ON PR.PropertyValueId = PV.PropertyValueId JOIN PropNames PN ON PV.PropertyId = PN.PropertyId";
+
+            bool firstGroupBy = true;
+            for (int i = 0; i <= noGroupBy; i++)
+            {
+                if (Request.Form["groupBy_" + i.ToString()] != null)
+                {
+                    string tempProperty = Request.Form["groupBy_" + i.ToString()].ToString();
+                    if (tempProperty != "0")
+                    {
+                        string tempSql = oneGroupBy;
+                        tempSql = tempSql.Replace("#_PropertyId#", tempProperty);
+                        //tempSql = tempSql.Replace("_GroupBy_", GetPropName(int.Parse(tempProperty)));
+                        //tempSql = tempSql.Replace("#_PropertyId#", "Prop_"+i.ToString());
+                        tempSql = tempSql.Replace("_GroupBy_", "Prop_" + i.ToString());
+                        if (firstGroupBy)
+                        {
+                            preGroupBy = "(" + tempSql + ") V" + i.ToString();
+                            subGroupBy = "Prop_" + i.ToString();
+                            firstGroupBy = false;
+                        }
+                        else
+                        {
+                            preGroupBy = preGroupBy + " JOIN (" + tempSql + ") V" + i.ToString() + " ON V" + (i - 1).ToString() + ".ProjectId = V" + i.ToString() + ".ProjectId AND " +
+                                "V" + (i - 1).ToString() + ".RowId = V" + i.ToString() + ".RowId"
+                                ;
+                            subGroupBy = subGroupBy + ", " + "Prop_" + i.ToString();
+                        }
+
+                        //preGroupBy += tempProperty;
+                        //sqlGroupBy.Add(groupByStr + " AND PV.PropertyId = " + tempProperty);
+                        //groupByList.Add(tempProperty);
+
+                        //if (firstGroupBy)
+                        //{
+                        //    //sqlStart = GetPropName(int.Parse(tempProperty));
+                        //    sqlStart = " T1.PropertyValue";
+                        //    firstGroupBy = false;
+                        //}
+                        //else
+                        //{
+                        //    //sqlStart = sqlStart + ", " + GetPropName(int.Parse(tempProperty));
+                        //    sqlStart = sqlStart + ", T" + (i + 1).ToString() + ".Propertyvalue ";
+                        //}
+                    }
+
+                }
+            }
+
+            retStr.Add(preGroupBy);
+            retStr.Add(subGroupBy);
+
+            return retStr;
         }
 
         public List<ResultRow> GetResult(string sqlStr)
@@ -91,8 +268,16 @@ namespace LAnalyzer.Controllers
             DbConnection.Open();
 
             SqlCommand resultCmd = new SqlCommand(sqlStr, DbConnection);
+            SqlDataReader myReader;
 
-            SqlDataReader myReader = resultCmd.ExecuteReader();
+            try
+            {
+                myReader = resultCmd.ExecuteReader();
+            }
+            catch (System.Data.SqlClient.SqlException e)
+            {
+                return null;
+            }
 
             List<ResultRow> myResult = new List<ResultRow>();
 

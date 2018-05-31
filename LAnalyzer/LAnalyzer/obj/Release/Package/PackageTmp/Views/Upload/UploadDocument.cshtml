@@ -1,0 +1,15 @@
+﻿@{
+    ViewBag.Title = "Upload data file to project";
+    string myMessage = ViewBag.Message;
+}
+
+<h2>Upload data file to project</h2>
+
+@using (Html.BeginForm("Upload", "Upload", FormMethod.Post, new { enctype = "multipart/form-data" }))
+{
+    <p>@myMessage</p>
+    <label>Give a name to your project:</label><br /><input type="text" name="Project" id="Project" onchange="ShowFile()" />
+    <input type="file" id="file" name="file" accept=".csv" />
+    <input type="submit" name="Submit" id="Submit" value="Upload" />
+}
+

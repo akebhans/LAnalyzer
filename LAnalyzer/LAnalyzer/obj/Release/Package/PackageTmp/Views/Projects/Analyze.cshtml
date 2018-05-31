@@ -1,0 +1,19 @@
+﻿@model IEnumerable<LAnalyzer.Models.PropName>
+@{
+    ViewBag.Title = "Analyze";
+}
+
+<h2>Analyze</h2>
+
+<table>
+    @foreach (var item in Model)
+    {
+        <tr>
+            <td>
+                <p>@item.PropertyName</p>
+            </td>
+        </tr>
+
+    }
+</table>
+

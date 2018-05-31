@@ -1,0 +1,54 @@
+﻿@model IEnumerable<LAnalyzer.Models.Project>
+
+@{
+    ViewBag.Title = "Project List";
+    if (TempData["shortMessage"] != null)
+    {
+        string text = TempData["shortMessage"].ToString();
+    }
+
+}
+
+<h2>Project List</h2>
+
+<table class="table">
+    <tr>
+        <th>
+            Project Name
+        </th>
+        <th></th>
+    </tr>
+
+    @foreach (var item in Model)
+    {
+        <tr>
+            <td width="40%">
+                @Html.DisplayFor(modelItem => item.ProjectName)
+            </td>
+            <td width="30%">
+                @if (item.Status.IsEmpty())
+                {
+                    {
+                        @Html.ActionLink("Analyze", "../AnalysisResult/Index", new { id = item.ProjectId })
+                    }
+                }
+            </td>
+
+            <td width="30%">
+                @if (item.Status.IsEmpty() || item.Status.Trim() == "")
+                {
+                    @Html.ActionLink("Delete", "Delete", new { id = item.ProjectId })
+                }
+                else if (item.Status == "D")
+                {
+                    <p>Deletion is ongoing ..</p>
+                }
+                else if (item.Status == "U")
+                {
+                    <p>Update of project is ongoing ..</p>
+                }
+            </td>
+        </tr>
+    }
+
+</table>
