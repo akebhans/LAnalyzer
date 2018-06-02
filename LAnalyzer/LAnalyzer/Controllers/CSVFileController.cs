@@ -18,12 +18,6 @@ namespace LAnalyzer.Controllers
             return View();
         }
 
-        //public void Save_File_Data(CSVFile myFile)
-        //public void Save_File_Data(string project, List<string> nameList, List<object> valueList, List<string> typeList)
-        //{
-
-        //}
-
         public ActionResult Save_File_Data(string project, List<string> nameList, List<object> valueList, List<string> typeList)
         {
             return View();

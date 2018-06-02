@@ -13,17 +13,16 @@ namespace LAnalyzer.Models
     public class ProjectData : Controller
     {
         public async Task<ActionResult> FillValues(string ADOcon, DB_Context context, int myProjectID, List<List<int>> myIDList, List<string> myTypeList, List<List<string>> myValueList)
+        // Update database with filedata as a background task
         {
-            ViewBag.Message = "Upload of project data to database is ongoing...";
             await Task.Run(() =>
             {
+                // Use ADO to improve performance 
                 SqlConnection DBcon = new SqlConnection(ADOcon);
                 DBcon.Open();
                 int LastRow = 0, lastPropertyIndex, lastDataIndex;
 
                 // For each row...
-
-
 
                 foreach (List<string> row in myValueList)
                 {
@@ -75,6 +74,7 @@ namespace LAnalyzer.Models
             return View("UploadDocument");
 
             void SavePropertyValue(SqlConnection sqlCon, DB_Context loccontext, int myPropertyId, string myPropertyValue, int rowNo)
+            // Saves Property Values in database tables
             {
 
                 myPropertyValue = myPropertyValue.Replace("'", "''");
@@ -101,7 +101,9 @@ namespace LAnalyzer.Models
 
 
             void SaveDataValue(SqlConnection sqlCon, DB_Context loccontext, int myDataId, string myDataValue, int rowNo)
+            // Saves Data Values in database
             {
+                // Replace decimal comma with decimal point
                 myDataValue = myDataValue.Replace(",", ".");
 
                 string addDataRSql = "INSERT INTO DATAROWS (ROWID, DATAID, DATAVALUE) VALUES (" + rowNo.ToString() + "," + myDataId + "," + myDataValue + ")";
@@ -116,11 +118,11 @@ namespace LAnalyzer.Models
         }
 
         public async Task<ActionResult> DeleteProject(int id)
+        // Deletes a project when user has clicked on DELETE link
         {
-            SetProjectstatus(id, "D");
+            SetProjectstatus(id, "D");  // is used to show in View that deletion is ongoing
             string ADOcon = ConfigurationManager.ConnectionStrings["ADOLucroAnalyzer"].ConnectionString;
             DB_Context context = new DB_Context();
-            TempData["shortMessage"] = "Project deletion is ongoing...";
             await Task.Run(() =>
                 {
                     // Use ADO instead of EF due to performance issues

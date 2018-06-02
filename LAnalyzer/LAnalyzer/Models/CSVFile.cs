@@ -9,7 +9,6 @@ namespace LAnalyzer.Models
     {
         public string Project { get; set; }
         public List<string> NameList { get; set; }
-        //public List<object> ValueList { get; set; }
         public List<List<string>> ValueList { get; set; }
         public List<string> TypeList { get; set; }
 

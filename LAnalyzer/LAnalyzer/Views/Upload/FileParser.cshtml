@@ -1,6 +1,5 @@
 ﻿
 @model LAnalyzer.Models.CSVFile
-@*@using Newtonsoft.Json;*@
 @{
     ViewBag.Title = "File Parser";
     string dataTypes = " ";
@@ -10,6 +9,7 @@
     {
         dataTypes = dataTypes + term;
     }
+    // Check that the file contains at least one column with numeric data and one with alphanumeric
     if (dataTypes.IndexOf("S") == 0 || dataTypes.IndexOf("N") == 0)
     {
         dataCheck = false;
@@ -28,7 +28,6 @@
     <div class="form-actions no-color">
         @if (dataCheck) {
             @Html.ActionLink("Save File Data to Project", "Save_File_Data", new { project = Model.Project, fileName= ViewBag.Content })
-            //Html.ActionLink("Save_File_Data", "Save_File_Data", new { myFile = myFile });
         }
     </div>
 }

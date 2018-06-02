@@ -9,9 +9,7 @@ using System.Web.Mvc;
 using LAnalyzer.Context;
 using LAnalyzer.Models;
 using Microsoft.AspNet.Identity;
-using System.Configuration;
-using System.Threading.Tasks;
-using System.Threading;
+
 
 namespace LAnalyzer.Controllers
 {
@@ -43,89 +41,6 @@ namespace LAnalyzer.Controllers
 
             return View(userProjectList);
 
-
-        }
-
-        // GET: Projects/Details/5
-        public ActionResult Details(int? id)
-        {
-            if (id == null)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-            }
-            Project project = db.Project.Find(id);
-            if (project == null)
-            {
-                return HttpNotFound();
-            }
-            return View(project);
-        }
-
-        // GET: Projects/Create
-        public ActionResult Analyze(int? id)
-        {
-            //if (ModelState.IsValid)
-            //{
-            //    List<PropName> propNameList = new List<PropName>();
-            //    List<PropValue> propValueList = new List<PropValue>();
-            //    List<PropRow> propRowList = new List<PropRow>();
-
-            //    List<T> ProjectList = new List<>();
-            //    Project project = db.Project.Find(id);
-
-            var propertyNames = from pN in db.PropertyName
-                        where pN.ProjectId.Equals(id)
-                        select pN;
-            
-            return View(propertyNames);
-        }
-
-        // POST: Projects/Create
-        // To protect from overposting attacks, please enable the specific properties you want to bind to, for 
-        // more details see https://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult Create([Bind(Include = "ProjectId,UserId,ProjectName")] Project project)
-        {
-            if (ModelState.IsValid)
-            {
-                db.Project.Add(project);
-                db.SaveChanges();
-                return RedirectToAction("Index");
-            }
-
-            return View(project);
-        }
-
-        // GET: Projects/Edit/5
-        public ActionResult Edit(int? id)
-        {
-            if (id == null)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-            }
-            Project project = db.Project.Find(id);
-            if (project == null)
-            {
-                return HttpNotFound();
-            }
-            return View(project);
-        }
-
-        // POST: Projects/Edit/5
-        // To protect from overposting attacks, please enable the specific properties you want to bind to, for 
-        // more details see https://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult Edit([Bind(Include = "ProjectId,UserId,ProjectName")] Project project)
-        {
-            if (ModelState.IsValid)
-            {
-                db.Entry(project).State = EntityState.Modified;
-                db.SaveChanges();
-                return RedirectToAction("Index");
-            }
-            return View(project);
         }
 
         // GET: Projects/Delete/5

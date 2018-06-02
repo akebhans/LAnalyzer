@@ -28,10 +28,10 @@ by editing this MSBuild file. In order to learn more about this please visit htt
       <publishTime>03/02/2015 09:32:26</publishTime>
     </File>
     <File Include="bin/LAnalyzer.dll">
-      <publishTime>05/28/2018 22:03:08</publishTime>
+      <publishTime>06/02/2018 17:17:59</publishTime>
     </File>
     <File Include="bin/LAnalyzer.pdb">
-      <publishTime>05/28/2018 22:03:08</publishTime>
+      <publishTime>06/02/2018 17:17:59</publishTime>
     </File>
     <File Include="bin/Microsoft.AI.Agent.Intercept.dll">
       <publishTime>11/30/2016 16:07:42</publishTime>
@@ -442,7 +442,7 @@ by editing this MSBuild file. In order to learn more about this please visit htt
       <publishTime>04/15/2018 16:10:46</publishTime>
     </File>
     <File Include="Views/Upload/FileParser.cshtml">
-      <publishTime>05/27/2018 21:22:58</publishTime>
+      <publishTime>06/02/2018 16:35:51</publishTime>
     </File>
     <File Include="Views/Upload/Save_File_Data.cshtml">
       <publishTime>04/23/2018 23:44:27</publishTime>

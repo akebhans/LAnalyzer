@@ -18,14 +18,17 @@ using System.Configuration;
 namespace LAnalyzer.Controllers
 {
     public class UploadController : Controller
+    // Controller for upload of file from client to database on server
     {
         //DB_Context context = new DB_Context();
 
         public ActionResult UploadDocument(string project = "", string uploadFile = "")
+        // Uploads file from client to server - uses async task
         {
+            // Check that Project Name is set, if so save it to database
             if (project != "")
             {
-
+                // Get UrserId if logged on
                 string myId = User.Identity.GetUserId();
                 if (CheckExistProject(myId, project))
                 {
@@ -40,26 +43,12 @@ namespace LAnalyzer.Controllers
                 context.Project.Add(myProject);
                 context.SaveChanges();
                 context.Dispose();
-                //var path = Path.Combine(Server.MapPath("~/App_Data/Files/"), uploadFile);
-                //var parser = new Microsoft.VisualBasic.FileIO.TextFieldParser(path);
-                //parser.TextFieldType = Microsoft.VisualBasic.FileIO.FieldType.Delimited;
-                //parser.SetDelimiters(new string[] { ";" });
-
-                //while (!parser.EndOfData)
-                //{
-                //    string[] row = parser.ReadFields();
-                //    /* do something */
-                //}
-                //CSVFile myCSVFile = new CSVFile();
-                //myCSVFile = FileParser(uploadFile);
-                //return RedirectToAction("UploadDocument", new { project = myProject, uploadFile = fileName });
+                // return with the action to show file content on screen
                 return RedirectToAction("FileParser", new { project = project, csvFile = uploadFile });
                 //return View("../Home/Index");
             }
             else
             {
-                string myId = User.Identity.GetUserId();
-                string test = Request.Form["Project"];
                 return View();
             }
         }
@@ -67,8 +56,8 @@ namespace LAnalyzer.Controllers
         [HttpPost]
         //public async Task<ActionResult> Upload()
         public ActionResult Upload()
+        // Saves transferred file locally on server before upload to database
         {
-            //Request.Form[]
             string myProject = Request.Form["Project"];
             if (Request.Files.Count > 0)
             {
@@ -87,6 +76,7 @@ namespace LAnalyzer.Controllers
                 }
                 if (myProject != "")
                 {
+                    // Go to action to show file content on screen
                     return RedirectToAction("UploadDocument", new { project = myProject, uploadFile = fileName });
                 }
                 else
@@ -101,6 +91,7 @@ namespace LAnalyzer.Controllers
 
         public bool CheckExistProject(string user, string project)
         {
+            // Checks that the project does not exist already
             DB_Context context = new DB_Context();
             using (context)
             {
@@ -128,25 +119,30 @@ namespace LAnalyzer.Controllers
         }
 
         public CSVFile UploadToObject(string project, string csvFile)
-        {
+        // Parses the uploaded file to a CSVFile object containing alll necessary data from the file
+        {     
             var nameList = new List<string>();
             var valueList = new List<List<string>>();
             var typeList = new List<string>();
             var path = Path.Combine(Server.MapPath("~/App_Data/Files/"), csvFile);
-            //var parser = new Microsoft.VisualBasic.FileIO.TextFieldParser(path);
             var parser = new Microsoft.VisualBasic.FileIO.TextFieldParser(path, System.Text.Encoding.UTF7);
             parser.TextFieldType = Microsoft.VisualBasic.FileIO.FieldType.Delimited;
+            // delimiter set to ; - this is where we could change code to handle other delimiters as well
             parser.SetDelimiters(new string[] { ";" });
             int i = 0;
+            // Parse the file content
             while (!parser.EndOfData)
             {
+                // Get one row of data
                 string[] row = parser.ReadFields();
+                // Get the column names
                 if (i == 0) nameList = row.ToList();
-                else
+                else  // get file content
                 {
                     valueList.Add(row.ToList());
                     if (i == 1)
                     {
+                        // Define types of the elements of the first row with data
                         typeList = row.ToList();
                         int j = 0;
                         foreach (var term in row)
@@ -158,6 +154,7 @@ namespace LAnalyzer.Controllers
                     }
                     else
                     {
+                        // Check the types of the eleents of the following rows, change to S (string) if we detect one
                         int j = 0;
                         foreach (var term in row)
                         {
@@ -169,6 +166,7 @@ namespace LAnalyzer.Controllers
                 }
                 i++;
             }
+            // Create CSVFile object, give the properties values and return
             CSVFile myFile = new CSVFile();
             myFile.Project = project;
             myFile.NameList = nameList;
@@ -178,45 +176,6 @@ namespace LAnalyzer.Controllers
         }
 
 
-        public string CsvToJson(string myFile)
-        {
-            var tempPath = Path.GetTempPath();
-            var csv = new List<string[]>();
-            var lines = System.IO.File.ReadAllLines(tempPath + "/" + myFile);
-            int i = 0;
-            string[] jsonElement = new string[2];
-            List<string[]> jsonLine = new List<string[]>();
-            string[] colElements = null, dataElements = null;
-            string jsonString = "";
-            foreach (string line in lines)
-            {
-                if (i == 0)
-                {
-                    colElements = line.Split(';').ToArray();
-                }
-                else
-                {
-                    dataElements = line.Split(';').ToArray();
-                    jsonString += "{";
-                    for (int j = 0; j < colElements.Length; j++)
-                    {
-                        if (IsDecimalFormat(dataElements[j]))
-                        {
-                            jsonString += "\"" + colElements[j] + "\":" + dataElements[j];
-                        }
-                        else
-                        {
-                            jsonString += "\"" + colElements[j] + "\":\"" + dataElements[j] + "\"";
-                        }
-                        if (j < colElements.Length - 1) jsonString += ",";
-                    }
-                    jsonString += "}";
-                }
-
-                i++;
-            }
-            return jsonString;
-        }
 
         bool IsDecimalFormat(string input)
         {
@@ -226,6 +185,7 @@ namespace LAnalyzer.Controllers
 
 
         public ActionResult Save_File_Data(string project, string fileName)
+        // Save transferred File to database
         {
             // Use ADO instead of EF due to performance issues
 
@@ -239,34 +199,34 @@ namespace LAnalyzer.Controllers
 
             var projectList = db.Project.ToList();
 
+            // Get the ProjectId for the Project Name given.
+
             int myProjectId = (from projItem in projectList
                                where projItem.ProjectName == project && projItem.UserId == User.Identity.GetUserId()
                                select projItem.ProjectId).FirstOrDefault();
 
-
-
-
-
+            // Save the Properties and DataNames in the database and return their corresponding Id's (key values9 from the database model
             List<List<int>> myIDList = FillNames(myProjectId, myData.NameList, myData.TypeList);
-
-            //FillValues(DbConnection,db,myProjectId, myIDList, myData.TypeList, myData.ValueList);
 
             ProjectData myProject = new ProjectData();
 
+            // SHow that the project is in the update status (used to show a text in the project list oin the View)
             myProject.SetProjectstatus(myProjectId, "U");
 
+            // Fill all values for properties and datanames in the database 
             myProject.FillValues(ADOcon, context: db, myProjectID: myProjectId, myIDList: myIDList, myTypeList: myData.TypeList, myValueList: myData.ValueList);
 
-            // Databas-anrop HÄR!!!
             db.SaveChanges();
             db.Dispose();
             DbConnection.Close();
 
+            // Show project List
             return RedirectToAction("../Projects/ProjectList");
-            //return View();
+            
         }
 
         private List<List<int>> FillNames(int projectId, List<string> namesList, List<string> typeList)
+        // Fill all the names of Properties and Data from the transferred file and returns their corresponding id's (key values)
         {
             DB_Context context = new DB_Context();
 
@@ -308,6 +268,7 @@ namespace LAnalyzer.Controllers
 
             int counter = 0;
 
+            // Fill property and data names in database
             foreach (string item in namesList)
             {
                 if (typeList[counter] == "S")
@@ -327,11 +288,15 @@ namespace LAnalyzer.Controllers
                 counter++;
             }
             context.SaveChanges();
+
+            // Get the id's (key values) for the Properties of this project
             var myPropList = from names in context.PropertyName where names.ProjectId == projectId select names.PropertyId;
             foreach (var item in myPropList)
             {
                 myPropIdList.Add(item);
             }
+
+            // Get the id's (key values) for the Data Names of this project
             var myDataList = from names in context.DataName where names.ProjectId == projectId select names.DataId;
             foreach (var item in myDataList)
             {
